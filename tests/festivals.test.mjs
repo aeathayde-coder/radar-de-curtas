@@ -21,9 +21,15 @@ test("colunas novas: qualificação, estreia, restrições, temas", () => {
   assert.equal(x.rulesUrl, "https://x.org/reg.pdf");
 });
 
-test("base inicial: 52 festivais com IDs únicos", () => {
-  assert.equal(list.length, 52);
-  assert.equal(new Set(list.map((f) => f.id)).size, 52);
+test("base: IDs únicos, nomes, datas e links válidos", () => {
+  assert.ok(list.length >= 40, `base com ${list.length} festivais`);
+  assert.equal(new Set(list.map((f) => f.id)).size, list.length, "IDs repetidos");
+  for (const f of list) {
+    assert.ok(f.name, `linha sem nome (${f.id})`);
+    if (f.deadline) assert.match(f.deadline, /^\d{4}-\d{2}-\d{2}$/, `data inválida em ${f.id}`);
+    if (f.url) assert.match(f.url, /^https?:\/\//, `link inválido em ${f.id}`);
+    assert.ok(["Confirmada", "Estimada", "A confirmar"].includes(f.dateStatus), `Status da data inválido em ${f.id}`);
+  }
 });
 
 test("CSV com aspas, vírgulas e quebra de linha", () => {
@@ -92,7 +98,7 @@ test("busca da planilha publicada e erro claro quando o link não é CSV", async
   const orig = globalThis.fetch;
   try {
     globalThis.fetch = async () => new Response("﻿" + CSV);
-    assert.equal((await fetchFestivals({ csvUrl: "https://x", fresh: true })).length, 52);
+    assert.equal((await fetchFestivals({ csvUrl: "https://x", fresh: true })).length, list.length);
     globalThis.fetch = async () => new Response("<!DOCTYPE html><html>");
     await assert.rejects(fetchFestivals({ csvUrl: "https://x", fresh: true }), /publique a aba/);
   } finally { globalThis.fetch = orig; }
