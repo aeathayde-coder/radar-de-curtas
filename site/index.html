@@ -7,7 +7,7 @@
 <meta name="description" content="Site brasileiro com os prazos de inscrição dos festivais de curta-metragem do Brasil e do mundo, com busca por gênero, país, duração e qualificação para o Oscar.">
 <meta property="og:title" content="Radar de Festivais">
 <meta property="og:description" content="Nenhum prazo fora do radar. Site brasileiro com prazos e informações de festivais de curta-metragem nacionais e internacionais.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2316191f'/><circle cx='16' cy='16' r='6' fill='%23d9480f'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2316191f'/><circle cx='16' cy='16' r='6' fill='%23009c3b'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
@@ -22,8 +22,16 @@
 
   <header>
     <div class="eyebrow" id="eyebrow">Festivais de curta-metragem · Brasil e mundo</div>
-    <h1>Nenhum prazo fora do <span>radar</span>.</h1>
-    <p class="lede" id="lede">Um site brasileiro que reúne prazos e informações de festivais de curta-metragem, nacionais e internacionais. Busque por nome, gênero, país, duração e o que mais importar para o seu filme. Salve os festivais que fazem sentido para você, acompanhe tudo no seu perfil e receba lembretes por e-mail, no seu ritmo. Navegar é livre: o login só serve para salvar.</p>
+    <div class="title">
+      <h1>Nenhum prazo fora do <span>radar</span>.</h1>
+      <p class="lede" id="lede">Um site brasileiro que reúne prazos e informações de festivais de curta-metragem, nacionais e internacionais.</p>
+    </div>
+    <ul class="how">
+      <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></span><div><b>Busque</b><span>por nome, gênero, país, duração e o que mais importar para o seu filme.</span></div></li>
+      <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></span><div><b>Salve</b><span>os festivais que fazem sentido para você e acompanhe tudo no seu perfil.</span></div></li>
+      <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></span><div><b>Receba lembretes</b><span>por e-mail antes dos prazos, no seu ritmo.</span></div></li>
+    </ul>
+    <p class="free">Navegar é livre.</p>
   </header>
 
   <section aria-labelledby="h-prox">
@@ -42,7 +50,7 @@
       <div class="seg" role="group" aria-label="Situação">
         <button data-s="all" aria-pressed="true">Qualquer situação</button>
         <button data-s="open" aria-pressed="false">Prazo à frente</button>
-        <button data-s="est" aria-pressed="false">Estimativas</button>
+        <button data-s="est" aria-pressed="false">Previstos</button>
         <button data-s="mine" aria-pressed="false" id="s-mine" hidden>Salvos</button>
       </div>
       <input type="search" id="q" placeholder="Buscar festival, cidade, gênero…" aria-label="Buscar">
@@ -106,9 +114,9 @@
     </div>
 
     <div class="legend">
-      <div><span class="pill p-hot">≤ 30 dias</span> Prazo confirmado e próximo.</div>
+      <div><span class="pill p-hot">faltam N dias</span> Prazo confirmado que termina em até 30 dias.</div>
       <div><span class="pill p-ok">confirmado</span> Prazo publicado pelo festival para a próxima edição.</div>
-      <div><span class="pill p-est">estimativa</span> Data projetada a partir da edição anterior; confirme no regulamento.</div>
+      <div><span class="pill p-est">previsto</span> Data prevista com base na edição anterior; aguardando confirmação do festival.</div>
       <div><span class="pill p-off">encerrado</span> Prazo já passou; aguardando o próximo ciclo.</div>
     </div>
   </section>

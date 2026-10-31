@@ -47,7 +47,7 @@ function status(f) {
     if (d <= 30) return { k: "hot", label: d === 0 ? "hoje" : `faltam ${d} dia${d === 1 ? "" : "s"}`, rank: 0 };
     return { k: "ok", label: `confirmado · ${d} d`, rank: 1 };
   }
-  return { k: "est", label: `estimativa · ~${d} d`, rank: 2 };
+  return { k: "est", label: `previsto · ~${d} d`, rank: 2 };
 }
 
 // ——— URL ⇄ filtros (busca compartilhável) ———
@@ -152,8 +152,9 @@ function renderStrip() {
       const confirmed = f.dateStatus === "Confirmada";
       const tag = f.url ? "a" : "div";
       const href = f.url ? ` href="${esc(f.url)}" target="_blank" rel="noopener"` : "";
-      return `<${tag} class="tick${d <= 7 && confirmed ? " hot" : ""}"${href}>
-        <span class="d">${fmt(f.deadline)}${confirmed ? "" : " · estimado"}</span>
+      const hot = d <= 7 && confirmed;
+      return `<${tag} class="tick${hot ? " hot" : ""}"${href}>
+        ${hot ? `<span class="ending">prazo acabando</span>` : ""}<span class="d">${fmt(f.deadline)}${confirmed ? "" : " · previsto"}</span>
         <span class="n">${esc(f.name)}</span>
         <span class="c">${d === 0 ? "hoje" : `em ${d} dia${d === 1 ? "" : "s"}`} · ${f.scope === "BR" ? "Brasil" : esc(f.country || f.local || "")}</span>
       </${tag}>`;
@@ -188,7 +189,7 @@ function renderTable() {
             : `<strong>${esc(f.name)}</strong>`;
           const sub =
             st.k === "off" ? `<span class="sub">aguardando próximo ciclo</span>`
-            : f.deadline && f.dateStatus !== "Confirmada" ? `<span class="sub">projetado pela edição anterior</span>` : "";
+            : f.deadline && f.dateStatus !== "Confirmada" ? `<span class="sub">aguardando confirmação</span>` : "";
           const tr = saved && S.trackSupported ? `<span class="mystatus">${esc(TRACK_LABEL[S.track.get(f.id)] || "Quero inscrever")}</span>` : "";
           return `<tr class="clickable" data-open="${esc(f.id)}">
             <td class="save"><button class="star" data-id="${esc(f.id)}" aria-pressed="${saved}" aria-label="${saved ? "Remover dos salvos" : "Salvar"}: ${esc(f.name)}" title="${logged ? (saved ? "Remover dos salvos" : "Salvar e receber lembrete") : "Entre com Google para salvar"}">${saved ? "★" : "☆"}</button></td>
@@ -257,7 +258,7 @@ function toggleAdv(open) {
 function renderHeader() {
   const checked = S.all.map((f) => f.checkedAt).filter(Boolean).sort().pop();
   $("#eyebrow").textContent = `Festivais de curta-metragem · Brasil e mundo${checked ? ` · atualizado em ${fmt(checked).replace(/^0/, "")}` : ""}`;
-  $("#lede").textContent = `Um site brasileiro que reúne prazos e informações de festivais de curta-metragem de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países, nacionais e internacionais. Busque por nome, gênero, país, duração e o que mais importar para o seu filme. Salve os festivais que fazem sentido para você, acompanhe tudo no seu perfil e receba lembretes por e-mail, no seu ritmo. Navegar é livre: o login só serve para salvar.`;
+  $("#lede").textContent = `Um site brasileiro que reúne prazos e informações de festivais de curta-metragem de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países, nacionais e internacionais.`;
 }
 
 let toastTimer;
@@ -279,7 +280,7 @@ function renderAccount() {
   }
   if (!S.sb) return;
   if (!S.user) {
-    el.innerHTML = `<span class="login-hint">Salve festivais e receba lembretes de prazo</span><button class="btn" id="login">Entrar com Google</button>`;
+    el.innerHTML = `<span class="login-hint">Salve seus festivais e receba lembretes com os prazos</span><button class="btn" id="login">Entrar com Google</button>`;
     $("#login").onclick = login;
     $("#s-mine").hidden = true;
     if (S.s === "mine") S.s = "all";
@@ -404,7 +405,7 @@ function openDetail(id) {
   const st = f._st;
   const rows = [];
   const add = (k, v) => v && rows.push(`<dt>${k}</dt><dd>${v}</dd>`);
-  add("Prazo", `${f.deadline ? `<span class="mono">${fmt(f.deadline)}</span> ` : "a confirmar "}<span class="pill p-${st.k}">${st.label}</span>${f.deadline && f.dateStatus !== "Confirmada" ? `<br><span class="muted small">Data projetada pela edição anterior; confirme no regulamento.</span>` : ""}`);
+  add("Prazo", `${f.deadline ? `<span class="mono">${fmt(f.deadline)}</span> ` : "a confirmar "}<span class="pill p-${st.k}">${st.label}</span>${f.deadline && f.dateStatus !== "Confirmada" ? `<br><span class="muted small">Data prevista com base na edição anterior; aguardando confirmação do festival.</span>` : ""}`);
   add("Próxima edição", esc(f.event));
   add("Local", esc([f.local, f.local && f.country && !f.local.includes(f.country) ? f.country : (!f.local ? f.country : "")].filter(Boolean).join(" · ")));
   add("Duração máxima", f.maxDuration != null ? `${f.maxDuration} min` : "");
@@ -460,7 +461,7 @@ async function setTrack(id, status) {
 // ——— agenda (Google Agenda e arquivo .ics) ———
 const ymd = (iso) => iso.replaceAll("-", "");
 const nextDay = (iso) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); };
-const calText = (f) => `${f.dateStatus === "Confirmada" ? "" : "Data estimada pela edição anterior; confirme no regulamento.\n"}${f.fee ? `Inscrição: ${f.fee}\n` : ""}${f.url || ""}\n\nRadar de Festivais: ${location.origin}`;
+const calText = (f) => `${f.dateStatus === "Confirmada" ? "" : "Data prevista com base na edição anterior; aguardando confirmação do festival.\n"}${f.fee ? `Inscrição: ${f.fee}\n` : ""}${f.url || ""}\n\nRadar de Festivais: ${location.origin}`;
 
 function googleCalUrl(f) {
   const p = new URLSearchParams({

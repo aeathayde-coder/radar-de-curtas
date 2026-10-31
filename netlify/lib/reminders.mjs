@@ -53,7 +53,7 @@ export function buildEmail({ items, siteUrl, unsubscribeUrl }) {
 
   const rows = items
     .map(({ festival: f, days }) => {
-      const est = f.dateStatus === "Confirmada" ? "" : " · data estimada, confirme no regulamento";
+      const est = f.dateStatus === "Confirmada" ? "" : " · data prevista, aguardando confirmação do festival";
       const link = f.url ? `<a href="${esc(f.url)}" style="color:#d9480f">página de inscrição</a>` : "";
       return `<tr><td style="padding:14px 0;border-bottom:1px solid #d9dce2">
         <div style="font-family:Menlo,monospace;font-size:13px;color:#5b6270">${esc(fmtDate(f.deadline))} · ${when(days)}${est}</div>
@@ -76,7 +76,7 @@ export function buildEmail({ items, siteUrl, unsubscribeUrl }) {
 
   const text =
     items
-      .map(({ festival: f, days }) => `${f.name}: prazo ${fmtDate(f.deadline)} (${when(days)})${f.dateStatus === "Confirmada" ? "" : ", data estimada"}${f.url ? `\n${f.url}` : ""}`)
+      .map(({ festival: f, days }) => `${f.name}: prazo ${fmtDate(f.deadline)} (${when(days)})${f.dateStatus === "Confirmada" ? "" : ", data prevista"}${f.url ? `\n${f.url}` : ""}`)
       .join("\n\n") + `\n\n${siteUrl}\nParar de receber: ${unsubscribeUrl}`;
 
   return { subject, html, text };
