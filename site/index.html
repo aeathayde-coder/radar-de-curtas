@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Radar de Curtas</title>
+<meta name="description" content="Site brasileiro com os prazos de inscrição dos festivais de curta-metragem do Brasil e do mundo, com busca por gênero, país, duração e qualificação para o Oscar.">
+<meta property="og:title" content="Radar de Curtas">
+<meta property="og:description" content="Nenhum prazo fora do radar. Prazos de inscrição dos festivais de curta-metragem do Brasil e do mundo.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2316191f'/><circle cx='16' cy='16' r='6' fill='%23d9480f'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <nav class="top" aria-label="Conta">
+    <a class="brand" href="/">Radar de <span>Curtas</span></a>
+    <div class="account" id="account"></div>
+  </nav>
+
+  <header>
+    <div class="eyebrow" id="eyebrow">Festivais de curta-metragem · Brasil e mundo</div>
+    <h1>Nenhum prazo fora do <span>radar</span>.</h1>
+    <p class="lede" id="lede">Um site brasileiro com os prazos de inscrição dos festivais de curta-metragem do Brasil e do mundo. Quando o regulamento novo ainda não saiu, projetamos o prazo pela edição anterior e marcamos como estimativa.</p>
+  </header>
+
+  <section aria-labelledby="h-prox">
+    <h2 id="h-prox">Prazos nos próximos 90 dias</h2>
+    <div class="strip" id="strip"><p class="muted">Carregando…</p></div>
+  </section>
+
+  <section aria-labelledby="h-all" class="stack">
+    <h2 id="h-all">Todos os festivais</h2>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Região">
+        <button data-r="all" aria-pressed="true">Todos</button>
+        <button data-r="BR" aria-pressed="false">Brasil</button>
+        <button data-r="INT" aria-pressed="false">Mundo</button>
+      </div>
+      <div class="seg" role="group" aria-label="Situação">
+        <button data-s="all" aria-pressed="true">Qualquer situação</button>
+        <button data-s="open" aria-pressed="false">Prazo à frente</button>
+        <button data-s="est" aria-pressed="false">Estimativas</button>
+        <button data-s="mine" aria-pressed="false" id="s-mine" hidden>Salvos</button>
+      </div>
+      <input type="search" id="q" placeholder="Buscar festival, cidade, gênero…" aria-label="Buscar">
+      <button class="btn ghost adv-btn" id="adv-toggle" aria-expanded="false" aria-controls="adv">
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3h14M4 8h8M6.5 13h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+        Busca avançada<span class="badge" id="adv-count" hidden></span>
+      </button>
+      <span class="count" id="count" aria-live="polite"></span>
+    </div>
+
+    <div class="adv" id="adv" hidden>
+      <fieldset>
+        <legend>Gênero do filme</legend>
+        <div class="chips" id="genres"></div>
+      </fieldset>
+      <fieldset>
+        <legend>Qualifica para</legend>
+        <div class="chips" id="quals"></div>
+      </fieldset>
+      <fieldset id="themes-set" hidden>
+        <legend>Temas</legend>
+        <div class="chips" id="themes"></div>
+      </fieldset>
+      <label class="field">
+        <span>País</span>
+        <select id="country"><option value="">Todos os países</option></select>
+      </label>
+      <label class="field">
+        <span>Duração do filme</span>
+        <span class="inline"><input type="number" id="dur" min="1" max="240" inputmode="numeric" placeholder="ex. 18"> min</span>
+      </label>
+      <div class="checks">
+      <label class="check">
+        <input type="checkbox" id="free">
+        <span>Só com inscrição gratuita</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="nopremiere">
+        <span>Só os que não exigem estreia</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="unknown" checked>
+        <span>Incluir festivais sem gênero ou duração informados</span>
+      </label>
+      </div>
+      <button class="link-btn" id="adv-clear">Limpar filtros</button>
+    </div>
+
+    <div class="tablebox">
+      <table>
+        <thead><tr>
+          <th class="save-col"><span class="sr">Salvar</span></th>
+          <th data-k="name" aria-sort="none">Festival</th>
+          <th data-k="deadline" aria-sort="ascending">Prazo</th>
+          <th data-k="status" aria-sort="none">Situação</th>
+          <th data-k="event" aria-sort="none">Próxima edição</th>
+          <th>Requisitos</th>
+        </tr></thead>
+        <tbody id="tb"><tr><td colspan="6" class="muted">Carregando festivais…</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="legend">
+      <div><span class="pill p-hot">≤ 30 dias</span> Prazo confirmado e próximo.</div>
+      <div><span class="pill p-ok">confirmado</span> Prazo publicado pelo festival para a próxima edição.</div>
+      <div><span class="pill p-est">estimativa</span> Data projetada a partir da edição anterior; confirme no regulamento.</div>
+      <div><span class="pill p-off">encerrado</span> Prazo já passou; aguardando o próximo ciclo.</div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Regras de estreia, duração e gênero mudam entre edições. Leia sempre o regulamento antes de inscrever, sobretudo nos festivais que exigem estreia mundial ou internacional (Cannes, Berlinale, Locarno, Veneza, IFFR).</p>
+    <p id="source">Fonte: sites e regulamentos oficiais dos festivais, FilmFreeway, Festhome e Short Film Depot. Mapeamento mantido pela Subtexto Creative Co. · <a href="/privacidade.html" style="color:inherit">Política de privacidade</a> · <a href="mailto:radardefestivais@gmail.com" style="color:inherit">Contato</a></p>
+  </footer>
+</div>
+
+<dialog id="profile" aria-labelledby="pf-title">
+  <form method="dialog" class="dlg">
+    <h2 id="pf-title">Seu perfil</h2>
+    <p class="muted" id="pf-email"></p>
+    <div class="row-btns">
+      <button type="button" class="btn ghost" id="pf-saved"></button>
+      <button type="button" class="btn ghost" id="pf-ics">Baixar prazos para a agenda (.ics)</button>
+    </div>
+    <label class="check">
+      <input type="checkbox" id="pf-optin">
+      <span>Receber lembretes por e-mail dos prazos dos festivais salvos</span>
+    </label>
+    <fieldset id="pf-days-set">
+      <legend>Avisar quantos dias antes</legend>
+      <div class="chips" id="pf-days"></div>
+    </fieldset>
+    <p class="muted small" id="pf-status" aria-live="polite"></p>
+    <div class="dlg-actions">
+      <button type="button" class="link-btn" id="pf-logout">Sair</button>
+      <button value="close" class="btn">Fechar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="detail" aria-labelledby="dt-title">
+  <div class="dlg wide">
+    <div class="dt-head">
+      <div>
+        <div class="eyebrow" id="dt-where"></div>
+        <h2 id="dt-title"></h2>
+      </div>
+      <button type="button" class="link-btn" id="dt-close" aria-label="Fechar">Fechar</button>
+    </div>
+    <div id="dt-body"></div>
+    <div class="dt-actions" id="dt-actions"></div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

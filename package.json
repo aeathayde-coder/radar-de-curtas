@@ -1,0 +1,10 @@
+{
+  "name": "radar-de-curtas",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "netlify dev",
+    "test": "node --test tests/*.test.mjs"
+  }
+}
