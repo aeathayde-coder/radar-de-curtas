@@ -4,7 +4,7 @@ import { fetchFestivals, todayBRT } from "../lib/festivals.mjs";
 import { selectReminders, buildEmail, unsubscribeToken } from "../lib/reminders.mjs";
 import { admin } from "../lib/supabase-admin.mjs";
 
-const FROM = process.env.RESEND_FROM || "Radar de Curtas <onboarding@resend.dev>";
+const FROM = process.env.RESEND_FROM || "Radar de Festivais <onboarding@resend.dev>";
 
 export default async () => {
   const db = admin();

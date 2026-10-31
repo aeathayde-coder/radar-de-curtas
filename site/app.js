@@ -1,4 +1,4 @@
-// Radar de Curtas — front-end (sem build). Dados: site/dados/festivais.csv. Conta: Supabase + Google.
+// Radar de Festivais — front-end (sem build). Dados: site/dados/festivais.csv. Conta: Supabase + Google.
 import CONFIG from "./config.js";
 import { loadSheet } from "./sheet.js";
 
@@ -257,7 +257,7 @@ function toggleAdv(open) {
 function renderHeader() {
   const checked = S.all.map((f) => f.checkedAt).filter(Boolean).sort().pop();
   $("#eyebrow").textContent = `Festivais de curta-metragem · Brasil e mundo${checked ? ` · atualizado em ${fmt(checked).replace(/^0/, "")}` : ""}`;
-  $("#lede").textContent = `Um site brasileiro com os prazos de inscrição de ${S.all.length} festivais de curta-metragem do Brasil e do mundo, e as datas da próxima edição. Quando o regulamento novo ainda não saiu, projetamos o prazo pela edição anterior e marcamos como estimativa.`;
+  $("#lede").textContent = `Um site brasileiro que reúne prazos e informações de ${S.all.length} festivais de curta-metragem de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países, nacionais e internacionais. Busque por nome, gênero, país, duração e o que mais importar para o seu filme. Salve os festivais que fazem sentido para você, acompanhe tudo no seu perfil e receba lembretes por e-mail, no seu ritmo. Navegar é livre: o login só serve para salvar.`;
 }
 
 let toastTimer;
@@ -352,7 +352,7 @@ function openProfile() {
     $("#h-all").scrollIntoView({ behavior: "smooth" });
   };
   $("#pf-ics").hidden = !n;
-  $("#pf-ics").onclick = () => downloadICS(S.all.filter((f) => S.saved.has(f.id)), "radar-de-curtas-salvos.ics");
+  $("#pf-ics").onclick = () => downloadICS(S.all.filter((f) => S.saved.has(f.id)), "radar-de-festivais-salvos.ics");
   $("#pf-optin").checked = p.email_opt_in;
   $("#pf-days").innerHTML = REMINDER_OPTIONS.map(
     (d) => `<label class="chip"><input type="checkbox" value="${d}" ${p.reminder_days.includes(d) ? "checked" : ""}><span>${d} dia${d === 1 ? "" : "s"}</span></label>`,
@@ -460,7 +460,7 @@ async function setTrack(id, status) {
 // ——— agenda (Google Agenda e arquivo .ics) ———
 const ymd = (iso) => iso.replaceAll("-", "");
 const nextDay = (iso) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); };
-const calText = (f) => `${f.dateStatus === "Confirmada" ? "" : "Data estimada pela edição anterior; confirme no regulamento.\n"}${f.fee ? `Inscrição: ${f.fee}\n` : ""}${f.url || ""}\n\nRadar de Curtas: ${location.origin}`;
+const calText = (f) => `${f.dateStatus === "Confirmada" ? "" : "Data estimada pela edição anterior; confirme no regulamento.\n"}${f.fee ? `Inscrição: ${f.fee}\n` : ""}${f.url || ""}\n\nRadar de Festivais: ${location.origin}`;
 
 function googleCalUrl(f) {
   const p = new URLSearchParams({
@@ -481,7 +481,7 @@ function downloadICS(list, filename) {
   const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
   const ev = items.map((f) => [
     "BEGIN:VEVENT",
-    `UID:${f.id}-${f.deadline}@radar-de-curtas`,
+    `UID:${f.id}-${f.deadline}@radar-de-festivais`,
     `DTSTAMP:${stamp}`,
     `DTSTART;VALUE=DATE:${ymd(f.deadline)}`,
     `DTEND;VALUE=DATE:${ymd(nextDay(f.deadline))}`,
@@ -491,7 +491,7 @@ function downloadICS(list, filename) {
     "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc(`Prazo em 7 dias: ${f.name}`)}`, "TRIGGER:-P7D", "END:VALARM",
     "END:VEVENT",
   ].filter(Boolean).map(fold).join("\r\n"));
-  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Radar de Curtas//PT-BR", "CALSCALE:GREGORIAN", ...ev, "END:VCALENDAR"].join("\r\n");
+  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Radar de Festivais//PT-BR", "CALSCALE:GREGORIAN", ...ev, "END:VCALENDAR"].join("\r\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
   a.download = filename;

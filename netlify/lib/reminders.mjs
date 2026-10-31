@@ -66,10 +66,10 @@ export function buildEmail({ items, siteUrl, unsubscribeUrl }) {
 
   const html = `<!doctype html><html><body style="margin:0;background:#f3f4f6;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#16191f">
   <table role="presentation" width="100%" style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #d9dce2;border-radius:8px;padding:8px 24px 20px">
-    <tr><td style="padding-top:16px;font-family:Menlo,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#5b6270">Radar de Curtas · lembrete</td></tr>
+    <tr><td style="padding-top:16px;font-family:Menlo,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#5b6270">Radar de Festivais · lembrete</td></tr>
     ${rows}
     <tr><td style="padding-top:16px;font-size:13px;color:#5b6270">
-      <a href="${esc(siteUrl)}" style="color:#16191f">Abrir o Radar de Curtas</a> para ver todos os festivais salvos e ajustar os lembretes.<br><br>
+      <a href="${esc(siteUrl)}" style="color:#16191f">Abrir o Radar de Festivais</a> para ver todos os festivais salvos e ajustar os lembretes.<br><br>
       <a href="${esc(unsubscribeUrl)}" style="color:#5b6270">Parar de receber lembretes</a>
     </td></tr>
   </table></body></html>`;

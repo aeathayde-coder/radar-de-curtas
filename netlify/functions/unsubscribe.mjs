@@ -5,7 +5,7 @@ const page = (title, body, status = 200) =>
   new Response(
     `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title}</title><body style="font-family:Arial,sans-serif;max-width:480px;margin:15vh auto;padding:0 20px;color:#16191f">
-<h1 style="font-size:24px">${title}</h1><p style="color:#5b6270">${body}</p><p><a href="/" style="color:#d9480f">Voltar ao Radar de Curtas</a></p></body></html>`,
+<h1 style="font-size:24px">${title}</h1><p style="color:#5b6270">${body}</p><p><a href="/" style="color:#d9480f">Voltar ao Radar de Festivais</a></p></body></html>`,
     { status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } },
   );
 
