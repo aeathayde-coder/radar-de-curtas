@@ -258,7 +258,7 @@ function toggleAdv(open) {
 function renderHeader() {
   const checked = S.all.map((f) => f.checkedAt).filter(Boolean).sort().pop();
   $("#eyebrow").textContent = `Festivais de curta-metragem · Brasil e mundo${checked ? ` · atualizado em ${fmt(checked).replace(/^0/, "")}` : ""}`;
-  $("#lede").textContent = `Um site brasileiro que reúne prazos e informações de festivais de curta-metragem de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países, nacionais e internacionais.`;
+  $("#lede").innerHTML = `Site <strong class="br">brasileiro</strong> que reúne prazos e informações de festivais de curta-metragem de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países, nacionais e internacionais.`;
 }
 
 let toastTimer;
