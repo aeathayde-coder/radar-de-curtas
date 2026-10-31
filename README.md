@@ -44,7 +44,7 @@ Os nomes das colunas podem estar em qualquer ordem e não importa se têm acento
 
 ## Configuração (uma vez, ~40 min)
 
-### 2. Supabase: banco e login com Google
+### 1. Supabase: banco e login com Google
 1. Crie um projeto em https://supabase.com (plano Free).
 2. **SQL Editor** → cole todo o `supabase/schema.sql` → **Run**.
 3. Em **Project Settings → API**, copie a *Project URL* (`SUPABASE_URL`), a *anon public key* (`SUPABASE_ANON_KEY`) e a *service_role key* (`SUPABASE_SERVICE_ROLE_KEY`, que é secreta).
@@ -59,14 +59,14 @@ Os nomes das colunas podem estar em qualquer ordem e não importa se têm acento
    - *Site URL*: `https://SEU-SITE.netlify.app`
    - *Redirect URLs*: `https://SEU-SITE.netlify.app/**`
 
-### 2b. Supabase: acompanhamento dos salvos (opcional)
+### 1b. Supabase: acompanhamento dos salvos (opcional)
 Rode `supabase/migracao-2-acompanhamento.sql` no SQL Editor, do mesmo jeito que o `schema.sql`. Ela libera, na ficha de cada festival salvo, o seletor de situação: Quero inscrever · Inscrito · Selecionado · Não selecionado. Festivais marcados como Inscrito, Selecionado ou Não selecionado deixam de gerar lembrete de prazo. Sem essa migração, o site funciona normalmente, só sem o seletor.
 
-### 3. Resend: e-mails
+### 2. Resend: e-mails
 1. Crie uma conta em https://resend.com → **API Keys** → crie uma chave com permissão *Sending access* (`RESEND_API_KEY`).
 2. **Limite importante:** sem domínio próprio verificado, o Resend só envia de `onboarding@resend.dev` **para o e-mail da sua própria conta Resend**. Não é possível verificar um subdomínio `*.netlify.app`. Os lembretes para outras pessoas só começam a funcionar quando houver um domínio próprio. Depois de verificar o domínio em **Domains**, troque `RESEND_FROM` por, por exemplo, `Radar de Curtas <lembretes@seudominio.com.br>`.
 
-### 4. Netlify: publicar a partir do GitHub
+### 3. Netlify: publicar a partir do GitHub
 1. No projeto do Netlify: **Project configuration → Build & deploy → Continuous deployment → Link repository** → GitHub → `aeathayde-coder/radar-de-curtas`.
 2. Deixe *Build command* vazio e *Publish directory* como `site` (o `netlify.toml` já define isso).
 3. A partir daí, cada envio ao GitHub publica o site sozinho, inclusive as funções (lembretes por e-mail).
@@ -74,7 +74,7 @@ Rode `supabase/migracao-2-acompanhamento.sql` no SQL Editor, do mesmo jeito que 
 
 Para trocar o nome do subdomínio: **Project configuration → General → Change project name**. Se mudar, atualize as URLs no Google e no Supabase.
 
-### 5. Conferir
+### 4. Conferir
 - A tabela deve carregar com os festivais de `site/dados/festivais.csv`.
 - Entre com Google, salve um festival e abra o perfil.
 - Lembretes: em **Logs → Functions → reminders → Run now** dá para disparar manualmente. O lembrete só sai se algum festival salvo estiver a exatamente 30, 14, 7, 3 ou 1 dia do prazo (conforme o perfil).
