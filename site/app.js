@@ -206,7 +206,7 @@ function renderTable() {
             st.k === "off" ? `<span class="sub">aguardando próximo ciclo</span>`
             : f.deadline && f.dateStatus !== "Confirmada" ? `<span class="sub">aguardando confirmação</span>` : "";
           const tr = saved && S.trackSupported ? `<span class="mystatus">${esc(TRACK_LABEL[S.track.get(f.id)] || "Quero inscrever")}</span>` : "";
-          return `<tr class="clickable" data-open="${esc(f.id)}">
+          return `<tr class="clickable${saved ? " is-saved" : ""}" data-open="${esc(f.id)}">
             <td class="save"><button class="star" data-id="${esc(f.id)}" aria-pressed="${saved}" aria-label="${saved ? "Remover dos salvos" : "Salvar"}: ${esc(f.name)}" title="${logged ? (saved ? "Remover dos salvos" : "Salvar e receber lembrete") : "Entre com Google para salvar"}">${saved ? "★" : "☆"}</button></td>
             <td class="name">${name}<span class="loc">${esc(f.local || f.country || "")}${site}</span>${tr}<span class="more" aria-hidden="true">Ver detalhes →</span></td>
             <td class="mono dl-cell" data-label="Prazo">${f.deadline ? (f.dateStatus === "Confirmada" ? "" : "~") + fmt(f.deadline) : "a confirmar"}${sub}</td>
@@ -219,7 +219,8 @@ function renderTable() {
     : `<tr><td colspan="6" class="empty">${S.s === "mine" && !S.saved.size ? "Você ainda não salvou nenhum festival. Use a estrela ☆ ao lado do nome." : `Nenhum festival com esses filtros.${S.q ? " Tente outra palavra ou use a Busca avançada para filtrar por gênero, país e duração." : ""}`}</td></tr>`;
   $("#count").textContent = `${rows.length} de ${S.all.length} festivais`;
   const mine = S.s === "mine";
-  $("#h-all").textContent = mine ? `Meus salvos${S.saved.size ? ` (${S.saved.size})` : ""}` : "Todos os festivais";
+  $("#h-all").innerHTML = mine ? `Meus <em>salvos</em>${S.saved.size ? ` (${S.saved.size})` : ""}` : "Todos os <em>festivais</em>";
+  $("#k-all").textContent = mine ? "02 — seus festivais" : "02 — base completa";
   $("#mine-bar").hidden = !mine;
 }
 

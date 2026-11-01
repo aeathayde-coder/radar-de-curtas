@@ -29,3 +29,16 @@
   for = "/*.css"
   [headers.values]
     Cache-Control = "public, max-age=300"
+
+# Modo manutenção: para tirar o site do ar temporariamente, apague o "#" do início
+# das 10 linhas abaixo e envie a alteração. Para voltar ao normal, recoloque o "#".
+# [[redirects]]
+#   from = "/styles.css"
+#   to = "/styles.css"
+#   status = 200
+#   force = true
+# [[redirects]]
+#   from = "/*"
+#   to = "/manutencao.html"
+#   status = 503
+#   force = true
