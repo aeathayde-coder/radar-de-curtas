@@ -346,7 +346,7 @@ function toggleAdv(open) {
 function renderHeader() {
   const checked = S.all.map((f) => f.checkedAt).filter(Boolean).sort().pop();
   $("#eyebrow").textContent = checked ? `Última atualização · ${fmt(checked).replace(/^0/, "")}` : "Atualizado semanalmente";
-  $("#lede").innerHTML = `Site <strong class="br">brasileiro</strong> que reúne prazos e informações de festivais de <span class="nw">curta-metragem</span> nacionais e internacionais, de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países (e contando)*.`;
+  $("#lede").innerHTML = `Site <strong class="br">brasileiro</strong>, sem fins lucrativos, que reúne prazos e informações de festivais de <span class="nw">curta-metragem</span> nacionais e internacionais, de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países (e contando)*.`;
 }
 
 let toastTimer;
@@ -673,5 +673,19 @@ async function init() {
   buildAdvanced();
   update();
 }
+
+// banner do Curió: só aparece quando houver link
+(function curio() {
+  const a = document.getElementById("curio");
+  if (a && CONFIG.curioUrl) { a.href = CONFIG.curioUrl; a.hidden = false; }
+})();
+
+// faixa do topo: alterna as duas mensagens
+(function rotateSoon() {
+  const items = [...document.querySelectorAll(".soon-rot > span")];
+  if (items.length < 2 || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  let i = 0;
+  setInterval(() => { items[i].classList.remove("on"); i = (i + 1) % items.length; items[i].classList.add("on"); }, 5000);
+})();
 
 init();

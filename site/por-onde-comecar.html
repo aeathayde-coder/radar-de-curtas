@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+<div class="soon" aria-live="off"><span class="soon-dot" aria-hidden="true"></span><span class="soon-rot"><span class="on">Em breve: seu radar também para longas-metragens.</span><span>Levando nosso audiovisual para todos os cantos.</span></span></div>
 <nav class="topbar" aria-label="Principal"><div class="tb-in">
   <a class="brand" href="/">Radar de <em>Festivais</em><i class="mark" aria-hidden="true"></i></a>
   <div class="tb-r"><a class="navlink" href="/como-funciona.html" aria-label="Como funciona"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.3 2.4c-.6.3-.9.8-.9 1.4v.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.9" r="1.1" fill="currentColor"/></svg><span class="nl">Como funciona</span></a><a class="btn" href="/">Ver festivais</a></div>
@@ -113,7 +114,7 @@
 
 <footer class="sitebar">
   <div class="sitebar-in">
-    <p><span class="sb-brand">Radar de <em>Festivais</em><i class="mark" aria-hidden="true"></i></span>Um projeto da <strong>Subtexto Creative Co.</strong><br><span>© 2026 · Todos os direitos reservados. Base de dados protegida por direitos autorais; reprodução apenas com autorização.</span></p>
+    <p><span class="sb-brand">Radar de <em>Festivais</em><i class="mark" aria-hidden="true"></i></span>Um projeto sem fins lucrativos da <strong><a class="sub-link" href="https://asubtexto.com.br" target="_blank" rel="noopener">Subtexto Creative Co.</a></strong><br><span class="tagline">Levando nosso audiovisual para todos os cantos.</span><br><span>© 2026 · Todos os direitos reservados. Base de dados protegida por direitos autorais; reprodução apenas com autorização.</span></p>
     <nav class="sitebar-links" aria-label="Institucional">
       <a href="/por-onde-comecar.html"><span class="circ" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg></span>Por onde começar</a>
       <a href="/privacidade.html"><span class="circ" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5.5c0 4.3 3 7.9 7 9.5 4-1.6 7-5.2 7-9.5V6z"/><path d="m9 12 2 2 4-4"/></svg></span>Política de privacidade</a>
@@ -121,5 +122,6 @@
     </nav>
   </div>
 </footer>
+<script>(function(){var t=document.querySelectorAll(".soon-rot > span");if(t.length<2||matchMedia("(prefers-reduced-motion: reduce)").matches)return;var i=0;setInterval(function(){t[i].classList.remove("on");i=(i+1)%t.length;t[i].classList.add("on")},5000)})();</script>
 </body>
 </html>

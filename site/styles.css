@@ -9,7 +9,7 @@
   --f-display:"Instrument Serif",Georgia,"Times New Roman",serif;
   --f-body:"Geist",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
   --f-mono:"Geist Mono",ui-monospace,Menlo,monospace;
-  --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.15' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.09'/></svg>");
+  --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 3.2 -1.6'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.16'/></svg>");
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root{
@@ -33,6 +33,11 @@ em{font-style:italic}
 
 /* faixa "em breve" */
 .soon{background:#0e0e0e;color:#f2f2ee;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:9px 16px;display:flex;align-items:center;justify-content:center;gap:10px}
+.soon-rot{display:inline-grid}
+.soon-rot>span{grid-area:1/1;opacity:0;transition:opacity .8s ease}
+.soon-rot>span.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.soon-rot>span{transition:none}}
+.sub-link{color:inherit;text-decoration:underline;text-decoration-color:var(--neon);text-decoration-thickness:2px;text-underline-offset:3px}
 .soon-dot{width:7px;height:7px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon)}
 
 /* barra superior */
@@ -243,6 +248,7 @@ td.notes .req{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px}
 .sitebar p strong{font-weight:500;color:#f2f2ee}
 .sitebar p span:not(.sb-brand){color:#9a9a96;font-size:12.5px}
 .sb-brand .mark{box-shadow:0 0 0 3px #0e0e0e,0 0 0 4.5px #f2f2ee;margin-left:12px;display:inline-block;vertical-align:middle;transform:translateY(-7px)}
+.sitebar p span.tagline{display:inline-block;margin:2px 0 4px;font-family:var(--f-display);font-style:italic;font-size:17px;color:#f2f2ee}
 .sb-brand{display:block;font-family:var(--f-display);font-size:28px;color:#f2f2ee;margin-bottom:4px;line-height:1.1}
 .sitebar-links{display:flex;gap:20px;flex-wrap:wrap}
 .sitebar-links a{display:inline-flex;align-items:center;gap:10px;color:#f2f2ee;text-decoration:none;font-size:14px}
@@ -294,6 +300,16 @@ dialog#detail{max-width:min(660px,calc(100vw - 24px));max-height:calc(100dvh - 2
 .doc .tag.t-hot{display:inline-block}
 @media (max-width:520px){.tags-dl{grid-template-columns:1fr;gap:4px}.tags-dl dd{margin-bottom:10px}}
 
+.curio{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:20px 28px;background:#0e0e0e;color:#f2f2ee;border-radius:4px;padding:26px 30px;text-decoration:none;position:relative;overflow:hidden}
+.curio[hidden]{display:none}
+.curio::after{content:"";position:absolute;inset:0;background-image:var(--grain);opacity:.6;mix-blend-mode:screen;pointer-events:none}
+.curio .cu-mark{font-family:var(--f-display);font-size:58px;line-height:.9;letter-spacing:-.02em}
+.curio .cu-mark em{color:var(--neon)}
+.curio .kicker{color:#a3a39e}
+.curio p{margin:6px 0 0;font-size:15px;line-height:1.5;color:#d9d9d4;max-width:56ch}
+.curio .cu-cta{display:inline-flex;align-items:center;gap:8px;background:var(--neon);color:#0e0e0e;font-weight:600;font-size:14.5px;padding:12px 20px;border-radius:999px;white-space:nowrap;position:relative;z-index:1}
+.curio:hover .cu-cta{background:#f2f2ee}
+
 /* telas médias */
 @media (max-width:1000px){
   .strip{grid-auto-columns:calc((100% - 2 * 16px) / 3)}
@@ -321,6 +337,9 @@ dialog#detail{max-width:min(660px,calc(100vw - 24px));max-height:calc(100dvh - 2
   .arrows{display:none}
   .foot-row{grid-template-columns:1fr}
   .foot-row .notes{text-align:left}
+  .curio{grid-template-columns:1fr;padding:22px}
+  .curio .cu-mark{font-size:46px}
+  .curio .cu-cta{justify-self:start}
   .mine-bar{grid-template-columns:1fr}
   .mine-acts{justify-content:flex-start}
 }

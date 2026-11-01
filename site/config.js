@@ -7,4 +7,6 @@ export default {
   // Login e festivais salvos (Supabase). Enquanto vazio, o site funciona sem login.
   supabaseUrl: "https://hhzwncwcmfmianmvwryv.supabase.co",
   supabaseAnonKey: "sb_publishable_HDDju27GseeCn9IEHYucrA_-OTFsXQE", // chave pública (nunca a secreta)
+  // Link de inscrição da newsletter Curió (Substack). Vazio = banner escondido.
+  curioUrl: "",
 };
