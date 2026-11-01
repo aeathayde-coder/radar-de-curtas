@@ -222,6 +222,73 @@ function renderTable() {
   $("#h-all").innerHTML = mine ? `Meus <em>salvos</em>${S.saved.size ? ` (${S.saved.size})` : ""}` : "Todos os <em>festivais</em>";
   $("#k-all").textContent = mine ? "02 — seus festivais" : "02 — base completa";
   $("#mine-bar").hidden = !mine;
+  renderCalc();
+}
+
+// ——— calculadora de investimento (Meus salvos) ———
+const CURRENCIES = ["BRL", "EUR", "USD", "GBP", "CHF", "CAD", "AUD", "MXN", "ARS", "COP", "CLP", "JPY", "KRW", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "TRY", "INR", "CNY", "ZAR"];
+const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const money = (v, c) => { try { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: c }).format(v); } catch { return `${c} ${v}`; } };
+let FX = null, fxLoading = null;
+async function loadFX() {
+  if (FX) return FX;
+  try { const c = JSON.parse(sessionStorage.getItem("rdf-fx") || "null"); if (c && c.day === new Date().toDateString()) return (FX = c); } catch {}
+  for (const url of ["https://api.frankfurter.dev/v1/latest?base=BRL", "https://api.frankfurter.app/latest?base=BRL"]) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (j && j.rates) { FX = { rates: j.rates, date: j.date, day: new Date().toDateString() }; try { sessionStorage.setItem("rdf-fx", JSON.stringify(FX)); } catch {} return FX; }
+    } catch {}
+  }
+  return null;
+}
+function feeFor(f) {
+  try { const o = JSON.parse(localStorage.getItem("rdf-fee-" + f.id) || "null"); if (o && Number.isFinite(o.v)) return { v: o.v, c: o.c, own: true }; } catch {}
+  return f.feeValue != null ? { v: f.feeValue, c: f.feeCurrency || "BRL", own: false } : { v: null, c: f.feeCurrency || "EUR", own: false };
+}
+const toBRL = (v, c) => (v == null ? null : c === "BRL" ? v : FX && FX.rates[c] ? v / FX.rates[c] : null);
+function renderCalc() {
+  const box = $("#calc");
+  const on = S.s === "mine" && S.saved.size > 0;
+  box.hidden = !on;
+  if (!on) return;
+  if (!FX && !fxLoading) fxLoading = loadFX().then(() => { fxLoading = null; renderCalc(); });
+  const list = S.all.filter((f) => S.saved.has(f.id)).sort((a, b) => (a.deadline || "9").localeCompare(b.deadline || "9"));
+  let todo = 0, done = 0, missing = 0, noRate = 0;
+  $("#calc-list").innerHTML = list.map((f) => {
+    const st = S.trackSupported ? S.track.get(f.id) || "quero" : "quero";
+    const fee = feeFor(f);
+    const v = toBRL(fee.v, fee.c);
+    if (fee.v == null) missing++;
+    else if (v == null) noRate++;
+    else if (st === "quero") todo += v; else done += v;
+    const opts = [...new Set([fee.c, ...CURRENCIES])].map((c) => `<option ${c === fee.c ? "selected" : ""}>${c}</option>`).join("");
+    return `<div class="calc-row" data-id="${esc(f.id)}">
+      <span class="cr-name">${esc(f.name)}<small>${esc(TRACK_LABEL[st] || "Quero inscrever")}${f.fee ? ` · ${esc(f.fee)}` : ""}</small></span>
+      <span class="cr-fee"><input type="number" min="0" step="0.01" inputmode="decimal" value="${fee.v ?? ""}" placeholder="taxa" aria-label="Taxa de ${esc(f.name)}"><select aria-label="Moeda">${opts}</select></span>
+      <span class="cr-brl">${v != null ? brl.format(v) : fee.v == null ? "informe a taxa" : "sem cotação"}</span>
+    </div>`;
+  }).join("");
+  $("#calc-todo").textContent = brl.format(todo);
+  $("#calc-done").textContent = brl.format(done);
+  const notes = [];
+  if (FX) notes.push(`Cotação de ${fmt(FX.date)} (bancos centrais, via Frankfurter).`);
+  else notes.push("Carregando a cotação do dia…");
+  if (missing) notes.push(`${missing} festival${missing > 1 ? "s" : ""} sem taxa informada: preencha se souber o valor.`);
+  if (noRate && FX) notes.push(`${noRate} em moeda sem cotação disponível.`);
+  notes.push("Valores aproximados; confira sempre no regulamento.");
+  $("#calc-note").textContent = notes.join(" ");
+}
+function saveFee(row) {
+  const id = row.dataset.id;
+  const v = parseFloat(row.querySelector("input").value);
+  const c = row.querySelector("select").value;
+  try {
+    if (Number.isFinite(v) && v >= 0) localStorage.setItem("rdf-fee-" + id, JSON.stringify({ v, c }));
+    else localStorage.removeItem("rdf-fee-" + id);
+  } catch {}
+  renderCalc();
 }
 
 function syncControls() {
@@ -567,6 +634,7 @@ function bind() {
     if (row) openDetail(row.dataset.open);
   };
   $("#mine-prefs").onclick = () => openProfile();
+  $("#calc-list").onchange = (e) => { const row = e.target.closest(".calc-row"); if (row) saveFee(row); };
   $("#mine-ics").onclick = () => downloadICS(S.all.filter((f) => S.saved.has(f.id)), "radar-de-festivais-salvos.ics");
   $("#mine-all").onclick = () => { S.s = "all"; update(); };
   $("#dt-close").onclick = () => $("#detail").close();
