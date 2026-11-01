@@ -40,7 +40,7 @@ em{font-style:italic}
 .tb-in{display:flex;align-items:center;justify-content:space-between;gap:12px;height:66px}
 .brand{display:inline-flex;align-items:baseline;font-family:var(--f-display);font-size:27px;letter-spacing:-.01em;color:var(--fg);text-decoration:none;white-space:nowrap;line-height:1}
 .brand em{margin-left:.22em}
-.mark{width:9px;height:9px;border-radius:50%;background:var(--neon);box-shadow:0 0 0 1px var(--fg);margin-left:4px;align-self:center;transform:translateY(-6px)}
+.mark{width:8px;height:8px;border-radius:50%;background:var(--neon);box-shadow:0 0 0 3px var(--bg),0 0 0 4.5px var(--fg);margin-left:10px;align-self:center;transform:translateY(-4px);flex:none}
 .tb-r{display:flex;align-items:center;gap:24px}
 .navlink{display:inline-flex;align-items:center;gap:6px;position:relative;font-size:14px;font-weight:500;color:var(--fg);text-decoration:none}
 button.navlink{background:none;border:0;padding:0;cursor:pointer}
@@ -240,6 +240,7 @@ td.notes .req{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px}
 .sitebar p{margin:0;font-size:13.5px;line-height:1.5;color:#c9c9c4}
 .sitebar p strong{font-weight:500;color:#f2f2ee}
 .sitebar p span:not(.sb-brand){color:#9a9a96;font-size:12.5px}
+.sb-brand .mark{box-shadow:0 0 0 3px #0e0e0e,0 0 0 4.5px #f2f2ee;margin-left:12px;display:inline-block;vertical-align:middle;transform:translateY(-7px)}
 .sb-brand{display:block;font-family:var(--f-display);font-size:28px;color:#f2f2ee;margin-bottom:4px;line-height:1.1}
 .sitebar-links{display:flex;gap:20px;flex-wrap:wrap}
 .sitebar-links a{display:inline-flex;align-items:center;gap:10px;color:#f2f2ee;text-decoration:none;font-size:14px}
