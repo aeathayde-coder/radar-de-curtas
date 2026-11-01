@@ -83,6 +83,8 @@ h1 em{background:linear-gradient(transparent 62%,var(--neon) 62% 92%,transparent
 .free{margin:16px 0 28px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
 .free::before{content:"";display:none}
 .free{display:inline-block;background:var(--neon);color:var(--on-neon);padding:2px 7px}
+.guide-line{margin:-14px 0 28px;font-size:14px;color:var(--muted)}
+.guide-line a{color:var(--fg);text-decoration-color:var(--neon);text-decoration-thickness:2px;text-underline-offset:3px}
 
 /* busca */
 .searchbar{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--fg);border-radius:999px;padding:7px 7px 7px 20px}
