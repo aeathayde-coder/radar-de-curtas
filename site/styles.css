@@ -324,12 +324,12 @@ dialog#detail{max-width:min(660px,calc(100vw - 24px));max-height:calc(100dvh - 2
 .cu-fab{position:fixed;right:24px;bottom:24px;z-index:60;display:flex;align-items:center}
 .cu-fab[hidden]{display:none}
 .cu-open{display:flex;align-items:center;text-decoration:none;color:#0e0e0e}
-.cu-pill{display:flex;align-items:center;gap:12px;background:#fff;border:0 solid #0e0e0e;border-radius:999px;height:48px;padding:0;margin-right:-34px;white-space:nowrap;max-width:0;opacity:0;overflow:hidden;transition:max-width .28s ease,opacity .2s ease,padding .28s ease}
+.cu-pill{display:flex;align-items:center;gap:12px;background:#fff;border:0 dotted var(--fg);border-radius:999px;height:48px;padding:0;margin-right:-34px;white-space:nowrap;max-width:0;opacity:0;overflow:hidden;transition:max-width .28s ease,opacity .2s ease,padding .28s ease}
 .cu-msg{font-family:"Bitter",Georgia,serif;font-weight:800;font-size:16px;letter-spacing:-.01em}
 .cu-go{background:var(--neon);color:#0e0e0e;border-radius:999px;padding:8px 14px;font:600 14px/1 var(--f-body),system-ui,sans-serif;letter-spacing:-.01em}
-.cu-head{width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid #0e0e0e;box-shadow:0 4px 14px rgba(0,0,0,.12);background:#fff;position:relative;z-index:2;display:block}
+.cu-head{width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px dotted var(--fg);box-shadow:0 4px 14px rgba(0,0,0,.12);background:#fff;position:relative;z-index:2;display:block}
 .cu-fab.open .cu-pill,.cu-fab:hover .cu-pill,.cu-open:focus-visible .cu-pill{max-width:340px;opacity:1;padding:0 44px 0 18px;border-width:1px;box-shadow:0 4px 14px rgba(0,0,0,.10)}
-.cu-x{position:absolute;top:-6px;right:-4px;width:20px;height:20px;border-radius:50%;background:#fff;border:1px solid #0e0e0e;color:#0e0e0e;font:500 13px/17px system-ui,sans-serif;text-align:center;z-index:3;cursor:pointer;padding:0}
+.cu-x{position:absolute;top:-6px;right:-4px;width:20px;height:20px;border-radius:50%;background:#fff;border:1px dotted var(--fg);color:#0e0e0e;font:500 13px/17px system-ui,sans-serif;text-align:center;z-index:3;cursor:pointer;padding:0}
 @media (max-width:640px){
   .cu-fab{right:14px;bottom:16px}
   .cu-head{width:56px;height:56px}
