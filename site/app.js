@@ -279,7 +279,7 @@ function toggleAdv(open) {
 function renderHeader() {
   const checked = S.all.map((f) => f.checkedAt).filter(Boolean).sort().pop();
   $("#eyebrow").textContent = checked ? `Última atualização · ${fmt(checked).replace(/^0/, "")}` : "Atualizado semanalmente";
-  $("#lede").innerHTML = `Site <strong class="br">brasileiro</strong> que reúne prazos e informações de festivais de curta-metragem nacionais e internacionais, de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países (e contando)*.`;
+  $("#lede").innerHTML = `Site <strong class="br">brasileiro</strong> que reúne prazos e informações de festivais de <span class="nw">curta-metragem</span> nacionais e internacionais, de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países (e contando)*.`;
 }
 
 let toastTimer;
