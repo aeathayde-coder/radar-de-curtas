@@ -400,3 +400,39 @@ dialog#detail{max-width:min(660px,calc(100vw - 24px));max-height:calc(100dvh - 2
   .sitebar-in{grid-template-columns:1fr}
 }
 @media (max-width:380px){ .brand{font-size:19px} }
+
+/* computador: letras um pouco maiores para leitura confortável */
+@media (min-width: 900px){
+  body{font-size:16.5px}
+  .lede{font-size:21px}
+  .how span:not(.ico){font-size:15px}
+  .free,.upd,.kicker,.soon{font-size:12px}
+  .quick button,.sorts button{font-size:15px}
+  .sb-field input{font-size:18px}
+  .adv-btn,.go{font-size:15px}
+  legend,.field>span:first-child{font-size:12px}
+  .chip span,.check{font-size:15px}
+  .c-name{font-size:18px}
+  .c-loc,.c-count{font-size:14.5px}
+  .c-date{font-size:12.5px}
+  .tag{font-size:11.5px}
+  th{font-size:12px}
+  .fname{font-size:17.5px}
+  td .loc,td .sub{font-size:14.5px}
+  .more,.mystatus{font-size:12px}
+  td.mono{font-size:14px}
+  td.ev,td.notes{font-size:15px}
+  .pill,.flag{font-size:12px}
+  .count{font-size:13px}
+  .legend{font-size:14.5px}
+  .foot-row .notes,.suggest span{font-size:14.5px}
+  .mine-bar p,.calc-head p{font-size:15px}
+  .cr-name{font-size:15.5px}
+  .cr-name small{font-size:13px}
+  .calc-note{font-size:13px}
+  .dl{font-size:16px}
+  .dl dt{font-size:12px}
+  .doc p,.doc li{font-size:17.5px}
+  .doc .doc-lede{font-size:20px}
+  .tags-dl dd{font-size:17px}
+}
