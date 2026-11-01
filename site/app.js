@@ -172,7 +172,7 @@ function renderStrip() {
         <span class="c-loc">${esc(f.local || f.country || "")}</span>
         <span class="c-count"><strong>${big}</strong> ${unit}</span>
         <span class="c-bar" aria-hidden="true"><i style="width:${fill}%"></i></span>
-        <span class="c-date">${fmt(f.deadline)}${confirmed ? "" : " · aguardando confirmação"}</span>
+        <span class="c-date">Inscrições até ${fmt(f.deadline)}${confirmed ? "" : " · previsto"}</span>
       </button>`;
     })
     .join("");
@@ -209,7 +209,7 @@ function renderTable() {
           return `<tr class="clickable${saved ? " is-saved" : ""}" data-open="${esc(f.id)}">
             <td class="save"><button class="star" data-id="${esc(f.id)}" aria-pressed="${saved}" aria-label="${saved ? "Remover dos salvos" : "Salvar"}: ${esc(f.name)}" title="${logged ? (saved ? "Remover dos salvos" : "Salvar e receber lembrete") : "Entre com Google para salvar"}">${saved ? "★" : "☆"}</button></td>
             <td class="name">${name}<span class="loc">${esc(f.local || f.country || "")}${site}</span>${tr}<span class="more" aria-hidden="true">Ver detalhes →</span></td>
-            <td class="mono dl-cell" data-label="Prazo">${f.deadline ? (f.dateStatus === "Confirmada" ? "" : "~") + fmt(f.deadline) : "a confirmar"}${sub}</td>
+            <td class="mono dl-cell" data-label="Inscrições até">${f.deadline ? (f.dateStatus === "Confirmada" ? "" : "~") + fmt(f.deadline) : "a confirmar"}${sub}</td>
             <td class="st"><span class="pill p-${st.k}">${st.label}</span></td>
             <td class="ev" data-label="Próxima edição">${esc(f.event || "—")}</td>
             <td class="notes">${reqCell(f)}</td>
@@ -346,7 +346,7 @@ function toggleAdv(open) {
 function renderHeader() {
   const checked = S.all.map((f) => f.checkedAt).filter(Boolean).sort().pop();
   $("#eyebrow").textContent = checked ? `Última atualização · ${fmt(checked).replace(/^0/, "")}` : "Atualizado semanalmente";
-  $("#lede").innerHTML = `Site <strong class="br">brasileiro</strong>, sem fins lucrativos, que reúne prazos e informações de festivais de <span class="nw">curta-metragem</span> nacionais e internacionais, de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países (e contando)*.`;
+  $("#lede").innerHTML = `Site <strong class="br">brasileiro</strong>, sem fins lucrativos, que reúne prazos de inscrição e informações de festivais de <span class="nw">curta-metragem</span> nacionais e internacionais, de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países (e contando)*.`;
 }
 
 let toastTimer;
@@ -496,7 +496,7 @@ function openDetail(id) {
   const st = f._st;
   const rows = [];
   const add = (k, v) => v && rows.push(`<dt>${k}</dt><dd>${v}</dd>`);
-  add("Prazo", `${f.deadline ? `<span class="mono">${fmt(f.deadline)}</span> ` : "a confirmar "}<span class="pill p-${st.k}">${st.label}</span>${f.deadline && f.dateStatus !== "Confirmada" ? `<br><span class="muted small">Data prevista com base na edição anterior; aguardando confirmação do festival.</span>` : ""}`);
+  add("Prazo de inscrição", `${f.deadline ? `<span class="mono">${fmt(f.deadline)}</span> ` : "a confirmar "}<span class="pill p-${st.k}">${st.label}</span>${f.deadline && f.dateStatus !== "Confirmada" ? `<br><span class="muted small">Data prevista com base na edição anterior; aguardando confirmação do festival.</span>` : ""}`);
   add("Próxima edição", esc(f.event));
   add("Local", esc([f.local, f.local && f.country && !f.local.includes(f.country) ? f.country : (!f.local ? f.country : "")].filter(Boolean).join(" · ")));
   add("Duração máxima", f.maxDuration != null ? `${f.maxDuration} min` : "");
