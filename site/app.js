@@ -676,8 +676,8 @@ async function init() {
 
 // banner do Curió: só aparece quando houver link
 (function curio() {
-  const a = document.getElementById("curio");
-  if (a && CONFIG.curioUrl) { a.href = CONFIG.curioUrl; a.hidden = false; }
+  const img = document.getElementById("curio-img");
+  if (img && CONFIG.curioUrl && CONFIG.curioBanner) { img.href = CONFIG.curioUrl; img.hidden = false; }
 })();
 
 // faixa do topo: alterna as duas mensagens

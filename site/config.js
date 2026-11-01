@@ -7,6 +7,8 @@ export default {
   // Login e festivais salvos (Supabase). Enquanto vazio, o site funciona sem login.
   supabaseUrl: "https://hhzwncwcmfmianmvwryv.supabase.co",
   supabaseAnonKey: "sb_publishable_HDDju27GseeCn9IEHYucrA_-OTFsXQE", // chave pública (nunca a secreta)
-  // Link de inscrição da newsletter Curió (Substack). Vazio = banner escondido.
-  curioUrl: "",
+  // Newsletter Curió: link de inscrição. O banner só aparece com curioBanner: true,
+  // depois que curio-banner.webp e curio-banner-celular.webp estiverem em site/img/.
+  curioUrl: "https://curiozine.substack.com",
+  curioBanner: false,
 };
