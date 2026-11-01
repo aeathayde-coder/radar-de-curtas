@@ -325,7 +325,7 @@ dialog#detail{max-width:min(660px,calc(100vw - 24px));max-height:calc(100dvh - 2
 .cu-fab[hidden]{display:none}
 .cu-open{display:flex;align-items:center;text-decoration:none;color:#0e0e0e}
 .cu-pill{display:flex;align-items:center;gap:12px;background:#fff;border:0 dotted var(--fg);border-radius:999px;height:48px;padding:0;margin-right:-34px;white-space:nowrap;max-width:0;opacity:0;overflow:hidden;transition:max-width .28s ease,opacity .2s ease,padding .28s ease}
-.cu-msg{font-family:"Bitter",Georgia,serif;font-weight:800;font-size:16px;letter-spacing:-.01em}
+.cu-msg{font-family:var(--f-body);font-weight:500;font-size:15px;letter-spacing:-.01em}
 .cu-go{background:var(--neon);color:#0e0e0e;border-radius:999px;padding:8px 14px;font:600 14px/1 var(--f-body),system-ui,sans-serif;letter-spacing:-.01em}
 .cu-head{width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px dotted var(--fg);box-shadow:0 4px 14px rgba(0,0,0,.12);background:#fff;position:relative;z-index:2;display:block}
 .cu-fab.open .cu-pill,.cu-fab:hover .cu-pill,.cu-open:focus-visible .cu-pill{max-width:340px;opacity:1;padding:0 44px 0 18px;border-width:1px;box-shadow:0 4px 14px rgba(0,0,0,.10)}
