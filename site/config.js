@@ -10,5 +10,5 @@ export default {
   // Newsletter Curió: link de inscrição. O banner só aparece com curioBanner: true,
   // depois que curio-banner.webp e curio-banner-celular.webp estiverem em site/img/.
   curioUrl: "https://curiozine.substack.com",
-  curioBanner: false,
+  curioBanner: true,
 };

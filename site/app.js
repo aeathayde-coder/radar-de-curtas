@@ -683,7 +683,31 @@ async function init() {
 // banner do Curió: só aparece quando houver link
 (function curio() {
   const img = document.getElementById("curio-img");
-  if (img && CONFIG.curioUrl && CONFIG.curioBanner) { img.href = CONFIG.curioUrl; img.hidden = false; }
+  if (!img || !CONFIG.curioUrl || !CONFIG.curioBanner) return;
+  img.href = CONFIG.curioUrl; img.hidden = false;
+
+  // círculo flutuante: aparece depois do topo, some perto do banner, fecha no ×
+  const fab = document.getElementById("cu-fab");
+  const open = document.getElementById("cu-open");
+  const KEY = "rdf-curio-fechado";
+  let closed = false;
+  try { closed = localStorage.getItem(KEY) === "1"; } catch {}
+  if (!fab || closed) return;
+  open.href = CONFIG.curioUrl;
+  let bannerVisible = false;
+  const update = () => { fab.hidden = closed || bannerVisible || window.scrollY < 500; if (fab.hidden) fab.classList.remove("open"); };
+  new IntersectionObserver(([e]) => { bannerVisible = e.isIntersecting; update(); }).observe(img);
+  addEventListener("scroll", update, { passive: true });
+  // toque (sem mouse): o 1º toque abre, o 2º leva à Curió
+  open.addEventListener("click", (e) => {
+    if (matchMedia("(hover: none)").matches && !fab.classList.contains("open")) { e.preventDefault(); fab.classList.add("open"); }
+  });
+  document.addEventListener("click", (e) => { if (!fab.contains(e.target)) fab.classList.remove("open"); });
+  document.getElementById("cu-x").addEventListener("click", () => {
+    closed = true; update();
+    try { localStorage.setItem(KEY, "1"); } catch {}
+  });
+  update();
 })();
 
 // faixa do topo: alterna as duas mensagens

@@ -14,7 +14,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230e0e0e'/><circle cx='16' cy='16' r='8.5' fill='none' stroke='%23f2f2ee' stroke-width='2'/><circle cx='16' cy='16' r='4.5' fill='%23c6ff3d'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Bitter:wght@800&display=swap">
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -167,11 +167,12 @@
     </div>
   </section>
 
-  <a class="curio-img" id="curio-img" href="https://curiozine.substack.com" target="_blank" rel="noopener" hidden aria-label="Assinar a newsletter Curió (gratuita)">
+  <a class="curio-img" id="curio-img" href="https://curiozine.substack.com" target="_blank" rel="noopener" hidden aria-label="Assinar a Curió, newsletter gratuita">
     <picture>
       <source media="(max-width: 640px)" srcset="/img/curio-banner-celular.webp">
-      <img src="/img/curio-banner.webp" alt="Curió, newsletter gratuita sobre o mercado audiovisual. Assine." width="2400" height="400" loading="lazy">
+      <img src="/img/curio-banner.webp" alt="Curió, newsletter gratuita: reflexões do nosso mundo hoje, através da cultura. Assinar a Curió." width="2400" height="400" loading="lazy">
     </picture>
+    <span class="curio-cta-m" aria-hidden="true"><span>Assinar a Curió →</span></span>
   </a>
   <a class="curio" id="curio" href="#" target="_blank" rel="noopener" hidden>
     <span class="cu-mark">Curi<em>ó</em></span>
@@ -242,6 +243,14 @@
 </footer>
 
 <div class="toast" id="toast" role="status" hidden></div>
+
+<div class="cu-fab" id="cu-fab" hidden>
+  <a class="cu-open" id="cu-open" href="https://curiozine.substack.com" target="_blank" rel="noopener" aria-label="Assinar a Curió, newsletter gratuita">
+    <span class="cu-pill"><span class="cu-msg">newsletter gratuita</span><span class="cu-go">Assinar →</span></span>
+    <img class="cu-head" src="/img/curio-passaro.webp" alt="" width="64" height="64">
+  </a>
+  <button class="cu-x" id="cu-x" type="button" aria-label="Fechar o aviso da Curió">×</button>
+</div>
 
 <script type="module" src="/app.js"></script>
 </body>
