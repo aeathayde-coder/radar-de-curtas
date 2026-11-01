@@ -265,7 +265,8 @@ function renderCalc() {
     else if (st === "quero") todo += v; else done += v;
     const opts = [...new Set([fee.c, ...CURRENCIES])].map((c) => `<option ${c === fee.c ? "selected" : ""}>${c}</option>`).join("");
     return `<div class="calc-row" data-id="${esc(f.id)}">
-      <span class="cr-name">${esc(f.name)}<small>${esc(TRACK_LABEL[st] || "Quero inscrever")}${f.fee ? ` · ${esc(f.fee)}` : ""}</small></span>
+      <span class="cr-name">${esc(f.name)}<small>${f.fee ? esc(f.fee) : "taxa não informada"}</small></span>
+      ${S.trackSupported ? `<select class="cr-st" aria-label="Situação de ${esc(f.name)}">${TRACK.map(([v, l]) => `<option value="${v}" ${v === st ? "selected" : ""}>${l}</option>`).join("")}</select>` : ""}
       <span class="cr-fee"><input type="number" min="0" step="0.01" inputmode="decimal" value="${fee.v ?? ""}" placeholder="taxa" aria-label="Taxa de ${esc(f.name)}"><select aria-label="Moeda">${opts}</select></span>
       <span class="cr-brl">${v != null ? brl.format(v) : fee.v == null ? "informe a taxa" : "sem cotação"}</span>
     </div>`;
@@ -634,7 +635,12 @@ function bind() {
     if (row) openDetail(row.dataset.open);
   };
   $("#mine-prefs").onclick = () => openProfile();
-  $("#calc-list").onchange = (e) => { const row = e.target.closest(".calc-row"); if (row) saveFee(row); };
+  $("#calc-list").onchange = (e) => {
+    const row = e.target.closest(".calc-row");
+    if (!row) return;
+    if (e.target.classList.contains("cr-st")) return setTrack(row.dataset.id, e.target.value).then(renderCalc);
+    saveFee(row);
+  };
   $("#mine-ics").onclick = () => downloadICS(S.all.filter((f) => S.saved.has(f.id)), "radar-de-festivais-salvos.ics");
   $("#mine-all").onclick = () => { S.s = "all"; update(); };
   $("#dt-close").onclick = () => $("#detail").close();
