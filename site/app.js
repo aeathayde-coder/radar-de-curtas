@@ -8,7 +8,9 @@ const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-const GENRE_ORDER = ["Ficção", "Documentário", "Animação", "Experimental", "Videoclipe", "Fantástico"];
+const GENRE_ORDER = ["Ficção", "Documentário", "Animação", "Experimental", "Videoclipe"];
+// Fantástico entra na Ficção: não vira botão de filtro, mas continua encontrável pela busca
+const HIDDEN_GENRES = ["Fantástico"];
 const REMINDER_OPTIONS = [30, 14, 7, 3, 1];
 const QUAL_ORDER = ["Oscar", "BAFTA", "EFA", "Goya"];
 const QUAL_LABEL = { Oscar: "Oscar", BAFTA: "BAFTA", EFA: "European Film Awards", Goya: "Goya" };
@@ -20,6 +22,7 @@ const TRACK = [
   ["nao_selecionado", "Não selecionado"],
 ];
 const TRACK_LABEL = Object.fromEntries(TRACK);
+const STAR_ICO = `<svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
 const MS = 86400000;
 
 const now = new Date();
@@ -135,7 +138,10 @@ function matches(f) {
 function sorter(a, b) {
   let v;
   if (S.sortKey === "status") v = a._st.rank - b._st.rank || (a.deadline || "9").localeCompare(b.deadline || "9");
-  else if (S.sortKey === "deadline") v = (a.deadline || "9999").localeCompare(b.deadline || "9999");
+  else if (S.sortKey === "deadline") {
+    const g = (f) => (!f.deadline ? 1 : days(f.deadline) >= 0 ? 0 : 2);
+    v = g(a) - g(b) || (a.deadline || "9999").localeCompare(b.deadline || "9999");
+  }
   else if (S.sortKey === "event") v = String(a.event || "~").localeCompare(String(b.event || "~"), "pt");
   else v = a.name.localeCompare(b.name, "pt");
   return v * S.sortDir;
@@ -144,20 +150,30 @@ function sorter(a, b) {
 // ——— render ———
 function renderStrip() {
   const el = $("#strip");
-  const list = S.all.filter((f) => f.deadline && days(f.deadline) >= 0 && days(f.deadline) <= 90);
+  const list = S.all
+    .filter((f) => f.deadline && days(f.deadline) >= 0 && days(f.deadline) <= 90)
+    .sort((a, b) => a.deadline.localeCompare(b.deadline));
+  $(".arrows").hidden = list.length < 2;
   if (!list.length) { el.innerHTML = `<p class="muted">Nenhum prazo nos próximos 90 dias.</p>`; return; }
   el.innerHTML = list
     .map((f) => {
       const d = days(f.deadline);
       const confirmed = f.dateStatus === "Confirmada";
-      const tag = f.url ? "a" : "div";
-      const href = f.url ? ` href="${esc(f.url)}" target="_blank" rel="noopener"` : "";
       const hot = d <= 7 && confirmed;
-      return `<${tag} class="tick${hot ? " hot" : ""}"${href}>
-        ${hot ? `<span class="ending">prazo acabando</span>` : ""}<span class="d">${fmt(f.deadline)}${confirmed ? "" : " · previsto"}</span>
-        <span class="n">${esc(f.name)}</span>
-        <span class="c">${d === 0 ? "hoje" : `em ${d} dia${d === 1 ? "" : "s"}`} · ${f.scope === "BR" ? "Brasil" : esc(f.country || f.local || "")}</span>
-      </${tag}>`;
+      const tag = hot
+        ? `<span class="tag t-hot">prazo acabando</span>`
+        : confirmed ? `<span class="tag t-ok">confirmado</span>` : `<span class="tag t-est">previsto</span>`;
+      const big = d === 0 ? "Hoje" : `${confirmed ? "" : "~"}${d}`;
+      const unit = d === 0 ? "último dia" : d === 1 ? "dia" : "dias";
+      const fill = Math.max(4, Math.min(100, Math.round(((90 - d) / 90) * 100)));
+      return `<button type="button" class="card${hot ? " hot" : ""}" data-open="${esc(f.id)}" aria-label="${esc(f.name)}: prazo ${fmt(f.deadline)}">
+        <span class="c-top">${tag}</span>
+        <span class="c-name">${esc(f.name)}</span>
+        <span class="c-loc">${esc(f.local || f.country || "")}</span>
+        <span class="c-count"><strong>${big}</strong> ${unit}</span>
+        <span class="c-bar" aria-hidden="true"><i style="width:${fill}%"></i></span>
+        <span class="c-date">${fmt(f.deadline)}${confirmed ? "" : " · aguardando confirmação"}</span>
+      </button>`;
     })
     .join("");
 }
@@ -184,16 +200,15 @@ function renderTable() {
         .map((f) => {
           const st = f._st;
           const saved = S.saved.has(f.id);
-          const name = f.url
-            ? `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a>`
-            : `<strong>${esc(f.name)}</strong>`;
+          const name = `<button type="button" class="fname" data-open="${esc(f.id)}">${esc(f.name)}</button>`;
+          const site = f.url ? ` · <a class="ext" href="${esc(f.url)}" target="_blank" rel="noopener" aria-label="Site oficial de ${esc(f.name)} (abre em nova aba)">site oficial ↗</a>` : "";
           const sub =
             st.k === "off" ? `<span class="sub">aguardando próximo ciclo</span>`
             : f.deadline && f.dateStatus !== "Confirmada" ? `<span class="sub">aguardando confirmação</span>` : "";
           const tr = saved && S.trackSupported ? `<span class="mystatus">${esc(TRACK_LABEL[S.track.get(f.id)] || "Quero inscrever")}</span>` : "";
           return `<tr class="clickable" data-open="${esc(f.id)}">
             <td class="save"><button class="star" data-id="${esc(f.id)}" aria-pressed="${saved}" aria-label="${saved ? "Remover dos salvos" : "Salvar"}: ${esc(f.name)}" title="${logged ? (saved ? "Remover dos salvos" : "Salvar e receber lembrete") : "Entre com Google para salvar"}">${saved ? "★" : "☆"}</button></td>
-            <td class="name">${name}<span class="loc">${esc(f.local || f.country || "")}</span>${tr}</td>
+            <td class="name">${name}<span class="loc">${esc(f.local || f.country || "")}${site}</span>${tr}<span class="more" aria-hidden="true">Ver detalhes →</span></td>
             <td class="mono dl-cell" data-label="Prazo">${f.deadline ? (f.dateStatus === "Confirmada" ? "" : "~") + fmt(f.deadline) : "a confirmar"}${sub}</td>
             <td class="st"><span class="pill p-${st.k}">${st.label}</span></td>
             <td class="ev" data-label="Próxima edição">${esc(f.event || "—")}</td>
@@ -203,11 +218,16 @@ function renderTable() {
         .join("")
     : `<tr><td colspan="6" class="empty">${S.s === "mine" && !S.saved.size ? "Você ainda não salvou nenhum festival. Use a estrela ☆ ao lado do nome." : `Nenhum festival com esses filtros.${S.q ? " Tente outra palavra ou use a Busca avançada para filtrar por gênero, país e duração." : ""}`}</td></tr>`;
   $("#count").textContent = `${rows.length} de ${S.all.length} festivais`;
+  const mine = S.s === "mine";
+  $("#h-all").textContent = mine ? `Meus salvos${S.saved.size ? ` (${S.saved.size})` : ""}` : "Todos os festivais";
+  $("#mine-bar").hidden = !mine;
 }
 
 function syncControls() {
   $$("[data-r]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.r === S.r));
   $$("[data-s]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.s === S.s));
+  $("#q-free").setAttribute("aria-pressed", S.free);
+  $$("[data-sort]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.sort === S.sortKey));
   $("#q").value = S.q;
   $$("#genres input").forEach((i) => (i.checked = S.genres.has(i.value)));
   $("#country").value = S.country;
@@ -227,7 +247,7 @@ function update() { syncControls(); syncAdvCount(); renderTable(); writeURL(); }
 function buildAdvanced() {
   // Ordem fixa para os principais; qualquer gênero novo escrito na planilha entra depois, em ordem alfabética
   const used = new Set(S.all.flatMap((f) => f.genres));
-  const extra = [...used].filter((g) => !GENRE_ORDER.includes(g)).sort((a, b) => a.localeCompare(b, "pt"));
+  const extra = [...used].filter((g) => !GENRE_ORDER.includes(g) && !HIDDEN_GENRES.includes(g)).sort((a, b) => a.localeCompare(b, "pt"));
   const genres = [...GENRE_ORDER.filter((g) => used.has(g)), ...extra];
   $("#genres").innerHTML = genres
     .map((g) => `<label class="chip"><input type="checkbox" value="${esc(g)}"><span>${esc(g)}</span></label>`)
@@ -240,7 +260,7 @@ function buildAdvanced() {
   const countries = [...new Set(S.all.map((f) => f.country).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt"));
   $("#country").insertAdjacentHTML("beforeend", countries.map((c) => `<option>${esc(c)}</option>`).join(""));
   // Aberta por padrão em telas largas; no celular abre pelo botão (ou se a URL já trouxer filtros)
-  if (S.genres.size || S.country || S.dur || !S.unknown || S.quals.size || S.themes.size || S.free || S.noPremiere || matchMedia("(min-width: 900px)").matches) toggleAdv(true);
+  if (S.genres.size || S.country || S.dur || !S.unknown || S.quals.size || S.themes.size || S.free || S.noPremiere) toggleAdv(true);
 }
 
 function syncAdvCount() {
@@ -257,8 +277,8 @@ function toggleAdv(open) {
 
 function renderHeader() {
   const checked = S.all.map((f) => f.checkedAt).filter(Boolean).sort().pop();
-  $("#eyebrow").textContent = `Festivais de curta-metragem · Brasil e mundo${checked ? ` · atualizado em ${fmt(checked).replace(/^0/, "")}` : ""}`;
-  $("#lede").innerHTML = `Site <strong class="br">brasileiro</strong> que reúne prazos e informações de festivais de curta-metragem de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países, nacionais e internacionais.`;
+  $("#eyebrow").textContent = checked ? `Última atualização · ${fmt(checked).replace(/^0/, "")}` : "Atualizado semanalmente";
+  $("#lede").innerHTML = `Site <strong class="br">brasileiro</strong> que reúne prazos e informações de festivais de curta-metragem nacionais e internacionais, de ${new Set(S.all.map((f) => f.country).filter(Boolean)).size} países (e contando)*.`;
 }
 
 let toastTimer;
@@ -280,16 +300,19 @@ function renderAccount() {
   }
   if (!S.sb) return;
   if (!S.user) {
-    el.innerHTML = `<span class="login-hint">Salve seus festivais e receba lembretes com os prazos</span><button class="btn" id="login">Entrar com Google</button>`;
+    el.innerHTML = `<button class="navlink" id="nav-saved" aria-label="Meus salvos">${STAR_ICO}<span class="nl">Meus salvos</span></button><button class="btn" id="login" aria-label="Entrar com Google"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3zM12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22zM6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2zM12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 6 12 6z"/></svg><span class="lg">Entrar com Google</span><span class="sm">Entrar</span></button>`;
     $("#login").onclick = login;
+    $("#nav-saved").onclick = () => toast("Entre com Google para salvar festivais e ver seus salvos aqui.");
     $("#s-mine").hidden = true;
     if (S.s === "mine") S.s = "all";
     return;
   }
   const meta = S.user.user_metadata || {};
   const pic = meta.avatar_url || meta.picture;
-  el.innerHTML = `<button class="btn ghost" id="open-profile">${pic ? `<img class="avatar" src="${esc(pic)}" alt="" referrerpolicy="no-referrer">` : ""}<span class="label">${esc(meta.full_name || meta.name || S.user.email)}</span></button>`;
+  el.innerHTML = `<button class="navlink" id="nav-saved" aria-label="Meus salvos">${STAR_ICO}<span class="nl">Meus salvos${S.saved.size ? ` (${S.saved.size})` : ""}</span>${S.saved.size ? `<span class="nbadge">${S.saved.size}</span>` : ""}</button><button class="btn ghost" id="open-profile">${pic ? `<img class="avatar" src="${esc(pic)}" alt="" referrerpolicy="no-referrer">` : `<span class="initial" aria-hidden="true">${esc((meta.full_name || meta.name || S.user.email || "?").trim().charAt(0).toUpperCase())}</span>`}<span class="label">${esc(meta.full_name || meta.name || S.user.email)}</span></button>`;
   $("#open-profile").onclick = openProfile;
+  $("#nav-saved").onclick = () => { S.s = "mine"; update(); $("#lista").scrollIntoView({ behavior: "smooth" }); };
+  $("#nav-saved").setAttribute("aria-pressed", S.s === "mine");
   $("#s-mine").hidden = false;
   $("#s-mine").textContent = `Salvos (${S.saved.size})`;
 }
@@ -503,7 +526,16 @@ function downloadICS(list, filename) {
 // ——— eventos ———
 function bind() {
   $$("[data-r]").forEach((b) => (b.onclick = () => { S.r = b.dataset.r; update(); }));
-  $$("[data-s]").forEach((b) => (b.onclick = () => { S.s = b.dataset.s; update(); }));
+  $$("[data-s]").forEach((b) => (b.onclick = () => { S.s = S.s === b.dataset.s ? "all" : b.dataset.s; update(); }));
+  $("#q-free").onclick = () => { S.free = !S.free; update(); };
+  $$("[data-sort]").forEach((b) => (b.onclick = () => { S.sortKey = b.dataset.sort; S.sortDir = 1; update(); }));
+  const toList = () => $("#lista").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  $("#go").onclick = toList;
+  $("#q").onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); S.q = e.target.value.trim(); update(); toList(); } };
+  const step = (dir) => { const st = $("#strip"); st.scrollBy({ left: dir * Math.max(240, st.clientWidth * 0.8), behavior: "smooth" }); };
+  $("#strip-prev").onclick = () => step(-1);
+  $("#strip-next").onclick = () => step(1);
+  $("#strip").onclick = (e) => { const c = e.target.closest("[data-open]"); if (c) openDetail(c.dataset.open); };
   let t;
   $("#q").oninput = (e) => { clearTimeout(t); t = setTimeout(() => { S.q = e.target.value.trim(); update(); }, 120); };
   $("#adv-toggle").onclick = () => toggleAdv($("#adv").hidden);
@@ -533,6 +565,9 @@ function bind() {
     const row = e.target.closest("tr[data-open]");
     if (row) openDetail(row.dataset.open);
   };
+  $("#mine-prefs").onclick = () => openProfile();
+  $("#mine-ics").onclick = () => downloadICS(S.all.filter((f) => S.saved.has(f.id)), "radar-de-festivais-salvos.ics");
+  $("#mine-all").onclick = () => { S.s = "all"; update(); };
   $("#dt-close").onclick = () => $("#detail").close();
   $("#detail").onclick = (e) => { if (e.target === $("#detail")) $("#detail").close(); };
   $("#pf-optin").onchange = saveProfile;

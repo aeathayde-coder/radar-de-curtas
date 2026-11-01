@@ -4,9 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Radar de Festivais</title>
-<meta name="description" content="Site brasileiro com os prazos de inscrição dos festivais de curta-metragem do Brasil e do mundo, com busca por gênero, país, duração e qualificação para o Oscar.">
+<meta name="description" content="Site brasileiro com prazos de inscrição e informações de festivais de curta-metragem nacionais e internacionais. Busque por gênero, país, duração e qualificação para o Oscar, salve e receba lembretes.">
+<meta property="og:url" content="https://www.radardefestivais.com.br/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
 <meta property="og:title" content="Radar de Festivais">
 <meta property="og:description" content="Nenhum prazo fora do radar. Site brasileiro com prazos e informações de festivais de curta-metragem nacionais e internacionais.">
+<link rel="canonical" href="https://www.radardefestivais.com.br/">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2316191f'/><circle cx='16' cy='16' r='6' fill='%23009c3b'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,54 +18,51 @@
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<div class="wrap">
-  <nav class="top" aria-label="Conta">
-    <a class="brand" href="/">Radar de <span>Festivais</span></a>
+<div class="soon"><span class="soon-dot" aria-hidden="true"></span>Em breve: seu radar também para longas-metragens.</div>
+<nav class="topbar" aria-label="Principal"><div class="tb-in">
+  <a class="brand" href="/"><i class="mark" aria-hidden="true"><b></b></i>Radar de <span>Festivais</span></a>
+  <div class="tb-r">
+    <a class="navlink" href="/como-funciona.html" aria-label="Como funciona"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.3 2.4c-.6.3-.9.8-.9 1.4v.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.9" r="1.1" fill="currentColor"/></svg><span class="nl">Como funciona</span></a>
     <div class="account" id="account"></div>
-  </nav>
+  </div>
+</div></nav>
 
-  <header>
-    <div class="eyebrow" id="eyebrow">Festivais de curta-metragem · Brasil e mundo</div>
-    <div class="title">
-      <h1>Nenhum prazo fora do <span>radar</span>.</h1>
-      <p class="lede" id="lede">Site <strong class="br">brasileiro</strong> que reúne prazos e informações de festivais de curta-metragem, nacionais e internacionais.</p>
-    </div>
+<header class="hero"><div class="hero-in">
+  <span class="upd"><span class="dot" aria-hidden="true"></span><span id="eyebrow">Última atualização</span></span>
+  <div class="title">
+  <h1>Nenhum prazo<br> fora do <span>radar</span>.</h1>
+  <p class="lede" id="lede">Site <strong class="br">brasileiro</strong> que reúne prazos e informações de festivais de curta-metragem nacionais e internacionais.</p>
+  <p class="lede-note">*Banco de dados atualizado semanalmente.</p>
+  </div>
     <ul class="how">
       <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></span><div><b>Busque</b><span>por nome, gênero, país, duração e o que mais importar para o seu filme.</span></div></li>
       <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></span><div><b>Salve</b><span>os festivais que fazem sentido para você e acompanhe tudo no seu perfil.</span></div></li>
       <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></span><div><b>Receba lembretes</b><span>por e-mail antes dos prazos, no seu ritmo.</span></div></li>
     </ul>
     <p class="free">Navegar é livre.</p>
-  </header>
 
-  <section aria-labelledby="h-prox">
-    <h2 id="h-prox">Em nosso radar nos próximos 90 dias</h2>
-    <div class="strip" id="strip"><p class="muted">Carregando…</p></div>
-  </section>
-
-  <section aria-labelledby="h-all" class="stack">
-    <h2 id="h-all">Todos os festivais</h2>
-    <div class="controls">
-      <div class="seg" role="group" aria-label="Região">
-        <button data-r="all" aria-pressed="true">Todos</button>
-        <button data-r="BR" aria-pressed="false">Brasil</button>
-        <button data-r="INT" aria-pressed="false">Mundo</button>
-      </div>
-      <div class="seg" role="group" aria-label="Situação">
-        <button data-s="all" aria-pressed="true">Qualquer situação</button>
-        <button data-s="open" aria-pressed="false">Prazo à frente</button>
-        <button data-s="est" aria-pressed="false">Previstos</button>
-        <button data-s="mine" aria-pressed="false" id="s-mine" hidden>Salvos</button>
-      </div>
-      <input type="search" id="q" placeholder="Buscar festival, cidade, gênero…" aria-label="Buscar">
-      <button class="btn ghost adv-btn" id="adv-toggle" aria-expanded="false" aria-controls="adv">
-        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3h14M4 8h8M6.5 13h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
-        Busca avançada<span class="badge" id="adv-count" hidden></span>
-      </button>
-      <span class="count" id="count" aria-live="polite"></span>
-    </div>
-
-    <div class="adv" id="adv" hidden>
+  <div class="searchbar" role="search">
+    <label class="sb-field">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input type="search" id="q" placeholder="Busque por festival, cidade, país, gênero, tema…" aria-label="Buscar festivais" autocomplete="off">
+    </label>
+    <button class="adv-btn" id="adv-toggle" aria-expanded="false" aria-controls="adv">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3h14M4 8h8M6.5 13h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+      Busca avançada<span class="badge" id="adv-count" hidden></span>
+    </button>
+    <button class="go" id="go">Buscar</button>
+  </div>
+  <div class="quick" role="group" aria-label="Filtros rápidos">
+    <button data-r="all" aria-pressed="true">Todos</button>
+    <button data-r="BR" aria-pressed="false">Brasil</button>
+    <button data-r="INT" aria-pressed="false">Mundo</button>
+    <span class="qsep" aria-hidden="true"></span>
+    <button data-s="open" aria-pressed="false">Inscrições abertas</button>
+    <button id="q-free" aria-pressed="false">Gratuitos</button>
+    <button data-s="est" aria-pressed="false">Previstos</button>
+    <button data-s="mine" aria-pressed="false" id="s-mine" hidden>Salvos</button>
+  </div>
+  <div class="adv" id="adv" hidden>
       <fieldset>
         <legend>Gênero do filme</legend>
         <div class="chips" id="genres"></div>
@@ -99,6 +100,36 @@
       <button class="link-btn" id="adv-clear">Limpar filtros</button>
     </div>
 
+</div></header>
+
+<div class="wrap">
+  <section aria-labelledby="h-prox">
+    <div class="sh">
+      <h2 id="h-prox">Em nosso radar nos próximos 90 dias</h2>
+      <div class="arrows"><button id="strip-prev" aria-label="Anteriores">←</button><button id="strip-next" aria-label="Próximos">→</button></div>
+    </div>
+    <div class="strip" id="strip"><p class="muted">Carregando…</p></div>
+  </section>
+
+  <section aria-labelledby="h-all" class="stack" id="lista">
+    <h2 id="h-all">Todos os festivais</h2>
+    <div class="mine-bar" id="mine-bar" hidden>
+      <p>Os festivais que você salvou, com a situação de cada inscrição. Toque em um festival para marcar se vai inscrever, se já inscreveu ou se foi selecionado.</p>
+      <div class="mine-acts">
+        <button class="btn ghost" id="mine-prefs">Lembretes por e-mail</button>
+        <button class="btn ghost" id="mine-ics">Exportar para o calendário</button>
+        <button class="link-btn" id="mine-all">Ver todos os festivais</button>
+      </div>
+    </div>
+    <div class="tools">
+      <div class="sorts" role="group" aria-label="Ordenar por">
+        <button data-sort="deadline" aria-pressed="true">Prazo mais próximo</button>
+        <button data-sort="name" aria-pressed="false">Nome A–Z</button>
+        <button data-sort="status" aria-pressed="false">Situação</button>
+      </div>
+      <span class="count" id="count" aria-live="polite"></span>
+    </div>
+
     <div class="tablebox">
       <table>
         <thead><tr>
@@ -121,9 +152,16 @@
     </div>
   </section>
 
-  <div class="notes">
+  <div class="foot-row">
+    <div class="suggest">
+      <b>Sugestões?</b>
+      <a href="mailto:radardefestivais@gmail.com?subject=Sugest%C3%A3o%20para%20o%20Radar%20de%20Festivais">Escreva pra gente →</a>
+      <span>Um festival que falta, uma data errada, uma ideia.</span>
+    </div>
+    <div class="notes">
     <p>Regras de estreia, duração e gênero mudam entre edições. Leia sempre o regulamento antes de inscrever, sobretudo nos festivais que exigem estreia mundial ou internacional (Cannes, Berlinale, Locarno, Veneza, IFFR).</p>
     <p id="source">Fonte: sites e regulamentos oficiais dos festivais, FilmFreeway, Festhome e Short Film Depot.</p>
+  </div>
   </div>
 </div>
 

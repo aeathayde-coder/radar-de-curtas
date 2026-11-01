@@ -68,7 +68,7 @@ export function createClient() {
   await page.fill("#dur", "20");
   await page.uncheck("#unknown");
   await page.waitForTimeout(100);
-  const names = await page.locator("#tb td.name a, #tb td.name strong").allTextContents();
+  const names = await page.locator("#tb td.name .fname").allTextContents();
   console.log("animação + 20min:", names.length, names.map((n) => n.slice(0, 20)));
   assert.ok(!names.some((n) => n.startsWith("Cannes")), "Cannes (≤15 min) deve sair");
   assert.ok(!names.some((n) => n.startsWith("Fantaspoa")), "Fantaspoa (só fantástico) deve sair");
@@ -121,7 +121,7 @@ export function createClient() {
   console.log("perfil:", JSON.stringify(await a.evaluate(() => window.__db.profiles[0])), "|", await a.textContent("#pf-status"));
   await a.screenshot({ path: `${out}/profile.png` });
   await a.click("#profile button[value=close]");
-  await a.click("[data-s='all']");
+  await a.click("[data-s='mine']"); // desliga o filtro de salvos (botões rápidos funcionam como liga/desliga)
   await a.click("#open-profile");
   console.log("botão salvos:", await a.textContent("#pf-saved"));
   await a.click("#pf-saved");
@@ -137,7 +137,7 @@ export function createClient() {
   await v.click("#quals label:has-text('BAFTA')");
   console.log("BAFTA:", await v.textContent("#count"));
   await v.check("#nopremiere");
-  console.log("BAFTA + sem estreia:", await v.textContent("#count"), await v.locator("#tb td.name a").allTextContents());
+  console.log("BAFTA + sem estreia:", await v.textContent("#count"), await v.locator("#tb td.name .fname").allTextContents());
   await v.click("#adv-clear");
   await v.check("#free");
   console.log("gratuitos:", await v.textContent("#count"));
