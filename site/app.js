@@ -430,7 +430,7 @@ async function toggleSave(id) {
   }
   if (!was) {
     const optin = S.profile?.email_opt_in;
-    toast(optin ? "Salvo. Você vai receber lembrete por e-mail antes do prazo." : "Salvo no seu perfil.");
+    toast(optin ? "Salvo. O lembrete chega por e-mail às 8h; se não aparecer, olhe em Promoções e Spam." : "Salvo no seu perfil.");
   }
 }
 
@@ -453,6 +453,7 @@ function openProfile() {
     (d) => `<label class="chip"><input type="checkbox" value="${d}" ${p.reminder_days.includes(d) ? "checked" : ""}><span>${d} dia${d === 1 ? "" : "s"}</span></label>`,
   ).join("");
   $("#pf-days-set").disabled = !p.email_opt_in;
+  $("#pf-hint").hidden = !p.email_opt_in;
   $("#pf-status").textContent = "";
   $("#profile").showModal();
 }
@@ -461,6 +462,7 @@ async function saveProfile() {
   const reminder_days = $$("#pf-days input:checked").map((i) => +i.value).sort((a, b) => b - a);
   const email_opt_in = $("#pf-optin").checked;
   $("#pf-days-set").disabled = !email_opt_in;
+  $("#pf-hint").hidden = !email_opt_in;
   const { error } = await S.sb.from("profiles").update({ email_opt_in, reminder_days }).eq("id", S.user.id);
   if (error) { console.error(error); $("#pf-status").textContent = "Não foi possível salvar."; return; }
   S.profile = { ...(S.profile || {}), email_opt_in, reminder_days };
