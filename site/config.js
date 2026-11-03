@@ -11,4 +11,6 @@ export default {
   // depois que curio-banner.webp e curio-banner-celular.webp estiverem em site/img/.
   curioUrl: "https://curiozine.substack.com",
   curioBanner: true,
+  // círculo flutuante da Curió (canto inferior esquerdo): desligado por enquanto
+  curioFab: false,
 };

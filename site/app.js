@@ -692,7 +692,7 @@ async function init() {
   const KEY = "rdf-curio-fechado";
   let closed = false;
   try { closed = localStorage.getItem(KEY) === "1"; } catch {}
-  if (!fab || closed) return;
+  if (!fab || closed || !CONFIG.curioFab) return;
   open.href = CONFIG.curioUrl;
   let bannerVisible = false;
   const update = () => { fab.hidden = closed || bannerVisible || window.scrollY < 500; if (fab.hidden) fab.classList.remove("open"); };
