@@ -82,6 +82,8 @@ function writeURL() {
   if (S.themes.size) p.set("tema", [...S.themes].join(","));
   if (S.free) p.set("gratis", "1");
   if (S.noPremiere) p.set("semestreia", "1");
+  // Volta do login com Google: o Supabase ainda precisa ler ?code= da URL; não apague antes disso
+  if (S.authPending) return;
   const qs = p.toString();
   history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
 }
@@ -468,6 +470,13 @@ async function saveProfile() {
 }
 
 async function initAuth() {
+  try { await startAuth(); } finally {
+    // URL liberada (com ou sem sessão): agora os filtros podem voltar a ser gravados nela
+    if (S.authPending) { S.authPending = false; writeURL(); }
+  }
+}
+
+async function startAuth() {
   let cfg = CONFIG.supabaseUrl ? CONFIG : null;
   if (!cfg) { try { cfg = await (await fetch("/api/config")).json(); } catch {} }
   if (!cfg?.supabaseUrl || !cfg?.supabaseAnonKey) { renderAccount(); update(); return; }
@@ -652,6 +661,8 @@ function bind() {
 
 // ——— início ———
 async function init() {
+  const qp = new URLSearchParams(location.search);
+  S.authPending = qp.has("code") || qp.has("error_description");
   readURL();
   bind();
   initAuth().catch((e) => console.error("auth", e));
