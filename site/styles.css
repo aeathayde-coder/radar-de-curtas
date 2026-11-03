@@ -327,7 +327,7 @@ dialog#detail{max-width:min(660px,calc(100vw - 24px));max-height:calc(100dvh - 2
 .cu-pill{display:flex;align-items:center;gap:12px;background:color-mix(in srgb,var(--neon-soft) 45%,var(--bg));color:var(--fg);border:0 dotted var(--fg);border-radius:999px;height:48px;padding:0;margin-left:-34px;white-space:nowrap;max-width:0;opacity:0;overflow:hidden;transition:max-width .28s ease,opacity .2s ease,padding .28s ease}
 .cu-msg{font-family:var(--f-body);font-weight:500;font-size:15px;letter-spacing:-.01em}
 .cu-msg{display:flex;align-items:baseline;gap:7px}
-.cu-nl{height:14px;width:auto;display:block}
+.cu-nl{height:9px;width:auto;display:block;margin-bottom:2px}
 .cu-tag{font-family:"Bitter",Georgia,serif;font-weight:800;font-size:15px;letter-spacing:-.005em;margin-left:3px}
 .cu-name{height:28px;width:auto;display:block}
 .cu-go{background:var(--neon);color:#0e0e0e;border-radius:999px;padding:8px 14px;font:600 14px/1 var(--f-body),system-ui,sans-serif;letter-spacing:-.01em}
@@ -341,7 +341,7 @@ dialog#detail{max-width:min(660px,calc(100vw - 24px));max-height:calc(100dvh - 2
   .cu-pill{height:auto;min-height:56px}
   .cu-fab.open .cu-pill{padding:6px 10px 6px 38px}
   .cu-msg{flex-wrap:wrap;width:150px;gap:2px 5px;row-gap:2px}
-  .cu-nl{height:10px}
+  .cu-nl{height:7px;margin-bottom:1px}
   .cu-tag{font-size:12.5px;margin-left:0;flex-basis:100%}
   .cu-name{height:20px}
   .cu-go{font-size:13px;padding:7px 11px}
