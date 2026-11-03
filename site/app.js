@@ -438,7 +438,7 @@ function openProfile() {
   const p = S.profile || { email: S.user.email, email_opt_in: true, reminder_days: [30, 7, 1] };
   $("#pf-email").textContent = `Lembretes vão para ${p.email}`;
   const n = S.saved.size;
-  $("#pf-saved").textContent = n ? `★ Ver meus ${n} festiva${n === 1 ? "l" : "is"} salvo${n === 1 ? "" : "s"}` : "Nenhum festival salvo ainda. Use a estrela ☆ na lista.";
+  $("#pf-saved").textContent = n ? (n === 1 ? "★ Ver meu festival salvo" : `★ Ver meus ${n} festivais salvos`) : "Nenhum festival salvo ainda. Use a estrela ☆ na lista.";
   $("#pf-saved").disabled = !n;
   $("#pf-saved").onclick = () => {
     $("#profile").close();
