@@ -70,7 +70,7 @@ export function createClient() {
   await page.waitForTimeout(100);
   const names = await page.locator("#tb td.name .fname").allTextContents();
   console.log("animação + 20min:", names.length, names.map((n) => n.slice(0, 20)));
-  assert.ok(!names.some((n) => n.startsWith("Cannes")), "Cannes (≤15 min) deve sair");
+  assert.ok(!names.some((n) => n.includes("Competição de curtas")), "Cannes, competição de curtas (≤15 min), deve sair");
   assert.ok(!names.some((n) => n.startsWith("Fantaspoa")), "Fantaspoa (só fantástico) deve sair");
   assert.ok(names.some((n) => n.startsWith("Annecy")));
   console.log("URL:", new URL(page.url()).search);
@@ -101,6 +101,7 @@ export function createClient() {
   // 3) Logado (Supabase simulado)
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await ctx.route("https://esm.sh/**", (r) => r.fulfill({ status: 200, contentType: "text/javascript", body: FAKE_SUPABASE }));
+  await ctx.route(/frankfurter/, (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ date: "2026-11-04", rates: { EUR: 0.16, USD: 0.185, GBP: 0.14, CHF: 0.15 } }) }));
   const a = await ctx.newPage();
   a.on("pageerror", (e) => errors.push(e.message));
   await a.goto("http://localhost:8889/");
@@ -115,6 +116,11 @@ export function createClient() {
   await a.click("#s-mine");
   console.log("aba salvos:", await a.textContent("#count"), "|", await a.textContent("#s-mine"));
   await a.screenshot({ path: `${out}/logged.png`, fullPage: false });
+  // planilha dos salvos (.xlsx gerada no navegador)
+  const [xl] = await Promise.all([a.waitForEvent("download"), a.click("#mine-xlsx")]);
+  await xl.saveAs(`${out}/salvos.xlsx`);
+  console.log("planilha:", xl.suggestedFilename(), require("fs").statSync(`${out}/salvos.xlsx`).size, "bytes");
+  await a.locator("#mine-bar").screenshot({ path: `${out}/mine-bar.png` });
   await a.click("#open-profile");
   await a.click("#pf-days label:has-text('14 dias')");
   await a.waitForTimeout(100);

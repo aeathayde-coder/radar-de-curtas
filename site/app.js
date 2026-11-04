@@ -283,6 +283,36 @@ function renderCalc() {
   notes.push("Valores aproximados; confira sempre no regulamento.");
   $("#calc-note").textContent = notes.join(" ");
 }
+// planilha .xlsx dos salvos (gerada no navegador; o módulo só carrega no clique)
+async function downloadXlsx() {
+  const btn = $("#mine-xlsx");
+  btn.disabled = true;
+  try {
+    const [{ buildXlsx }] = await Promise.all([import("/planilha.js"), loadFX()]);
+    const list = S.all.filter((f) => S.saved.has(f.id)).sort((a, b) => (a.deadline || "9").localeCompare(b.deadline || "9"));
+    const rows = list.map((f) => {
+      const fee = feeFor(f);
+      return {
+        name: f.name, country: f.country, local: f.local, deadline: f.deadline,
+        dateLabel: f.dateStatus === "Confirmada" ? "Confirmada" : f.dateStatus === "Estimada" ? "Prevista" : "A confirmar",
+        status: TRACK_LABEL[S.trackSupported ? S.track.get(f.id) || "quero" : "quero"],
+        fee: fee.v, currency: fee.v == null ? "" : fee.c, maxDuration: f.maxDuration, premiere: f.premiere, url: f.url,
+      };
+    });
+    const used = new Set(["BRL", "EUR", "USD", "GBP", "CHF", ...rows.map((r) => r.currency).filter(Boolean)]);
+    const rates = [...used].map((c) => [c, c === "BRL" ? 1 : FX && FX.rates[c] ? 1 / FX.rates[c] : null]);
+    const rateNote = FX ? `Cotação de ${fmt(FX.date)} (bancos centrais, via Frankfurter).` : "Cotação indisponível na hora da exportação: preencha os valores em azul.";
+    const blob = buildXlsx({ rows, rates, rateNote });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "radar-de-festivais-meus-festivais.xlsx";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch (e) {
+    console.error(e);
+    toast("Não foi possível gerar a planilha. Tente de novo.");
+  } finally { btn.disabled = false; }
+}
 function saveFee(row) {
   const id = row.dataset.id;
   const v = parseFloat(row.querySelector("input").value);
@@ -653,6 +683,7 @@ function bind() {
     saveFee(row);
   };
   $("#mine-ics").onclick = () => downloadICS(S.all.filter((f) => S.saved.has(f.id)), "radar-de-festivais-salvos.ics");
+  $("#mine-xlsx").onclick = () => downloadXlsx();
   $("#mine-all").onclick = () => { S.s = "all"; update(); };
   $("#dt-close").onclick = () => $("#detail").close();
   $("#detail").onclick = (e) => { if (e.target === $("#detail")) $("#detail").close(); };
