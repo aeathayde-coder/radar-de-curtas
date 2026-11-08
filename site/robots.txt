@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://radardefestivais.com.br/sitemap.xml
+Sitemap: https://www.radardefestivais.com.br/sitemap.xml
