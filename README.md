@@ -34,6 +34,7 @@ tests/                   testes e preview local
 | Qualificação | Prêmios para os quais o festival é qualificador: Oscar, BAFTA, EFA (European Film Awards), Goya. Separados por vírgula. Vira selo verde e filtro. |
 | Exigência de estreia | Ex.: Mundial · Internacional · Inédito no RS · Não exige. "Não exige" alimenta o filtro "Só os que não exigem estreia". |
 | Restrições | Quem pode inscrever, quando há limite: "Só filmes brasileiros", "Só filmes de escolas de cinema", "Diretores sem longa-metragem". Aparece em vermelho. |
+| Origem aceita | Nacionalidade do filme aceita nas competições (país de produção, não o passaporte de quem dirige): Qualquer país · Nacional (só do país do festival) · Regional com Brasil (ex.: latino-americanos, ibero-americanos) · Regional sem Brasil (ex.: só europeus). Se ao menos uma competição for aberta ao mundo, use Qualquer país. Alimenta os filtros "Só os que aceitam filmes brasileiros" e "Só os abertos a filmes de qualquer país". Vazio = não informado. |
 | Temas | Recorte temático, separado por vírgula (Meio ambiente, Direitos humanos, LGBTQIA+…). Vira filtro quando houver algum preenchido. |
 | Observações | Texto público que aparece na ficha do festival. |
 | Regulamento | Link direto para o regulamento (https://…). Vira botão na ficha. |

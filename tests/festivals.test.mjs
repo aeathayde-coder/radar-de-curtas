@@ -14,6 +14,11 @@ test("colunas novas: qualificação, estreia, restrições, temas", () => {
   assert.equal(by("veneza").premiere, "Mundial");
   assert.equal(by("go-short").restrictions, "Competição europeia: só produções europeias");
   assert.deepEqual(by("filmambiente").themes, ["Meio ambiente"]);
+  assert.equal(by("mostra-tiradentes").origin, "national");
+  assert.equal(by("curta-canoa").origin, "regional-br");
+  assert.equal(by("go-short").origin, "regional");
+  assert.equal(by("clermont-ferrand").origin, "any");
+  for (const f of list) assert.ok(f.origin, `Origem aceita vazia em ${f.id}`);
   assert.equal(by("tampere").rulesUrl, null);
   const rows = parseCSV("Nome,Qualificação,Regulamento\nX,\"oscar qualifying; BAFTA\",https://x.org/reg.pdf\n");
   const [x] = rowsToFestivals(rows);

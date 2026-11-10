@@ -37,7 +37,7 @@ const fmt = (iso) => {
 const S = {
   all: [],
   r: "all", s: "all", q: "", genres: new Set(), country: "", dur: null, unknown: true,
-  quals: new Set(), themes: new Set(), free: false, noPremiere: false,
+  quals: new Set(), themes: new Set(), free: false, noPremiere: false, acceptsBR: false, anyOrigin: false,
   sortKey: "deadline", sortDir: 1,
   sb: null, user: null, profile: null, saved: new Set(), track: new Map(), trackSupported: false,
 };
@@ -68,6 +68,8 @@ function readURL() {
   (p.get("tema") || "").split(",").filter(Boolean).forEach((t) => S.themes.add(t));
   S.free = p.get("gratis") === "1";
   S.noPremiere = p.get("semestreia") === "1";
+  S.acceptsBR = p.get("br") === "1";
+  S.anyOrigin = p.get("mundo") === "1";
 }
 function writeURL() {
   const p = new URLSearchParams();
@@ -82,6 +84,8 @@ function writeURL() {
   if (S.themes.size) p.set("tema", [...S.themes].join(","));
   if (S.free) p.set("gratis", "1");
   if (S.noPremiere) p.set("semestreia", "1");
+  if (S.acceptsBR) p.set("br", "1");
+  if (S.anyOrigin) p.set("mundo", "1");
   // Volta do login com Google: o Supabase ainda precisa ler ?code= da URL; não apague antes disso
   if (S.authPending) return;
   const qs = p.toString();
@@ -109,6 +113,14 @@ const queryTerms = (q) => norm(q).split(/[^a-z0-9$€£-]+/).filter(Boolean).map
 // "Gratuito": taxa ou observação dizem que a inscrição é grátis (inclui gratuito só para brasileiros)
 const isFree = (f) => /\b(gratuit|gr[aá]tis|isent|free)/i.test(`${f.fee || ""} ${f.notes || ""}`);
 const noPremiere = (f) => /n[aã]o exige|sem exig|n[aã]o requer/i.test(f.premiere || "");
+// Origem aceita: vale a nacionalidade do filme (país de produção), não o passaporte de quem dirige
+const acceptsBR = (f) => f.origin === "any" || f.origin === "regional-br" || (f.origin === "national" && f.scope === "BR");
+const ORIGIN_LABEL = {
+  any: "Filmes de qualquer país",
+  national: "Só filmes do país do festival",
+  "regional-br": "Recorte regional (inclui o Brasil)",
+  regional: "Recorte regional (não inclui o Brasil)",
+};
 
 function matches(f) {
   if (S.r !== "all" && f.scope !== S.r) return false;
@@ -129,6 +141,9 @@ function matches(f) {
   if (S.themes.size && !f.themes.some((t) => S.themes.has(t))) return false;
   if (S.free && !isFree(f)) return false;
   if (S.noPremiere && !noPremiere(f)) return false;
+  // Sem origem informada: segue a opção "Incluir festivais sem gênero, duração ou origem informados"
+  if (S.acceptsBR && (f.origin ? !acceptsBR(f) : !S.unknown)) return false;
+  if (S.anyOrigin && (f.origin ? f.origin !== "any" : !S.unknown)) return false;
   if (S.q) {
     // Cada termo precisa casar com o começo de alguma palavra ("rio" acha Rio de Janeiro, não "documentário")
     const words = (f._words ||= norm([f.name, f.local, f.country, f.region, f.fee, f.benefit, f.event, f.genres.join(" "), f.qualifies.join(" "), f.themes.join(" "), f.notes, f.restrictions, f.premiere].join(" ")).split(/[^a-z0-9$€£]+/).filter(Boolean));
@@ -338,6 +353,8 @@ function syncControls() {
   $$("#themes input").forEach((i) => (i.checked = S.themes.has(i.value)));
   $("#free").checked = S.free;
   $("#nopremiere").checked = S.noPremiere;
+  $("#acceptsbr").checked = S.acceptsBR;
+  $("#anyorigin").checked = S.anyOrigin;
   $$("th[data-k]").forEach((th) =>
     th.setAttribute("aria-sort", th.dataset.k === S.sortKey ? (S.sortDir === 1 ? "ascending" : "descending") : "none"),
   );
@@ -361,11 +378,11 @@ function buildAdvanced() {
   const countries = [...new Set(S.all.map((f) => f.country).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt"));
   $("#country").insertAdjacentHTML("beforeend", countries.map((c) => `<option>${esc(c)}</option>`).join(""));
   // Aberta por padrão em telas largas; no celular abre pelo botão (ou se a URL já trouxer filtros)
-  if (S.genres.size || S.country || S.dur || !S.unknown || S.quals.size || S.themes.size || S.free || S.noPremiere) toggleAdv(true);
+  if (S.genres.size || S.country || S.dur || !S.unknown || S.quals.size || S.themes.size || S.free || S.noPremiere || S.acceptsBR || S.anyOrigin) toggleAdv(true);
 }
 
 function syncAdvCount() {
-  const n = S.genres.size + S.quals.size + S.themes.size + (S.country ? 1 : 0) + (S.dur ? 1 : 0) + (S.unknown ? 0 : 1) + (S.free ? 1 : 0) + (S.noPremiere ? 1 : 0);
+  const n = S.genres.size + S.quals.size + S.themes.size + (S.country ? 1 : 0) + (S.dur ? 1 : 0) + (S.unknown ? 0 : 1) + (S.free ? 1 : 0) + (S.noPremiere ? 1 : 0) + (S.acceptsBR ? 1 : 0) + (S.anyOrigin ? 1 : 0);
   const b = $("#adv-count");
   b.hidden = !n;
   b.textContent = n;
@@ -545,6 +562,7 @@ function openDetail(id) {
   add("Gêneros aceitos", esc(f.genres.join(", ")));
   add("Qualifica para", esc(f.qualifies.map((q) => QUAL_LABEL[q]).join(", ")));
   add("Estreia", esc(f.premiere));
+  add("Origem dos filmes", esc(ORIGIN_LABEL[f.origin] || ""));
   add("Quem pode inscrever", esc(f.restrictions));
   add("Temas", esc(f.themes.join(", ")));
   add("Inscrição", esc(f.fee));
@@ -657,9 +675,11 @@ function bind() {
   $("#themes").onchange = () => { S.themes = new Set($$("#themes input:checked").map((i) => i.value)); update(); };
   $("#free").onchange = (e) => { S.free = e.target.checked; update(); };
   $("#nopremiere").onchange = (e) => { S.noPremiere = e.target.checked; update(); };
+  $("#acceptsbr").onchange = (e) => { S.acceptsBR = e.target.checked; update(); };
+  $("#anyorigin").onchange = (e) => { S.anyOrigin = e.target.checked; update(); };
   $("#adv-clear").onclick = () => {
     S.genres.clear(); S.quals.clear(); S.themes.clear();
-    S.country = ""; S.dur = null; S.unknown = true; S.free = false; S.noPremiere = false;
+    S.country = ""; S.dur = null; S.unknown = true; S.free = false; S.noPremiere = false; S.acceptsBR = false; S.anyOrigin = false;
     update();
   };
   $$("th[data-k]").forEach((th) => (th.onclick = () => {
