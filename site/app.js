@@ -366,7 +366,8 @@ function syncControls() {
   $$("[data-s]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.s === S.s));
   $("#q-free").setAttribute("aria-pressed", S.free);
   $$("[data-sort]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.sort === S.sortKey));
-  $("#q").value = S.q;
+  // Não reescreve o campo enquanto a pessoa digita (apagaria o espaço do fim e juntaria as palavras)
+  if (document.activeElement !== $("#q")) $("#q").value = S.q;
   $$("#genres input").forEach((i) => (i.checked = S.genres.has(i.value)));
   $("#country").value = S.country;
   $("#dur").value = S.dur ?? "";

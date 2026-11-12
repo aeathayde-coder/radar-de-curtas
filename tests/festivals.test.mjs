@@ -115,3 +115,9 @@ test("lembretes: mesmo festival salvo em dois filmes gera um aviso só", () => {
   const out = selectReminders({ saved: [{ user_id: "u", festival_id: "x", profiles: prof }, { user_id: "u", festival_id: "x", profiles: prof }], festivals: [f], today: "2026-11-12" });
   assert.equal(out[0].items.length, 1);
 });
+
+test("busca ignora palavras genéricas como 'film festival'", async () => {
+  const { queryTerms } = await import("../site/filtros.js");
+  assert.deepEqual(queryTerms("Locarno Film Festival").map((a) => a[0]), ["locarno"]);
+  assert.deepEqual(queryTerms("festival").map((a) => a[0]), ["festival"]);
+});

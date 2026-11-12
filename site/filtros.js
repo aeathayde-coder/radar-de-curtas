@@ -14,7 +14,13 @@ export const SYNONYMS = {
   usa: ["eua"], germany: ["alemanha"], netherlands: ["holanda"], holland: ["holanda"],
 };
 // Cada termo da busca vira uma lista de alternativas aceitas
-export const queryTerms = (q) => norm(q).split(/[^a-z0-9$€£-]+/).filter(Boolean).map((t) => [t, ...(SYNONYMS[t] || [])]);
+// Palavras genéricas ("festival", "film", "de"...) não precisam bater: quem busca "Locarno Film Festival" quer o Locarno
+const STOP = new Set(["festival", "festivais", "film", "films", "filme", "filmes", "fest", "de", "do", "da", "dos", "das", "e", "the", "of", "and", "international", "internacional", "int", "intl"]);
+export const queryTerms = (q) => {
+  const all = norm(q).split(/[^a-z0-9$€£-]+/).filter(Boolean);
+  const key = all.filter((t) => !STOP.has(t));
+  return (key.length ? key : all).map((t) => [t, ...(SYNONYMS[t] || [])]);
+};
 
 // "Gratuito": taxa ou observação dizem que a inscrição é grátis (inclui gratuito só para brasileiros)
 export const isFree = (f) => /\b(gratuit|gr[aá]tis|isent|free)/i.test(`${f.fee || ""} ${f.notes || ""}`);
