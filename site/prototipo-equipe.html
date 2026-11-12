@@ -54,6 +54,16 @@
 .newnote input{flex:1;font:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--fg);border-radius:999px;background:var(--surface);color:var(--fg)}
 .fld input[type=email]{font:inherit}
 [data-ro="1"] .edit-only{display:none}
+.vis{font:inherit;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--fg);border-radius:999px;padding:5px 11px;background:var(--surface);color:var(--fg);cursor:pointer;white-space:nowrap}
+.vis.on{background:var(--neon);color:var(--on-neon)}
+.vis svg{width:14px;height:14px}
+.mail{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.mail-h{background:var(--neon-soft);padding:10px 14px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line)}
+.mail-b{padding:18px;display:flex;flex-direction:column;gap:12px;font-size:15px;line-height:1.5}
+.acct{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-size:14px}
+.acct:hover{border-color:var(--fg)}
+.err{font-size:13.5px;background:var(--hot-soft);color:var(--fg);border:1px solid var(--hot);border-radius:4px;padding:10px 12px}
+.sim{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px dotted var(--fg);border-radius:4px;padding:12px 14px;font-size:13.5px}
 </style>
 </head>
 <body>
@@ -75,6 +85,8 @@
     <button class="fchip" data-as="felipe" aria-pressed="false">Felipe, editor</button>
     <button class="fchip" data-as="maisa" aria-pressed="false">Maísa, apenas visualização</button>
   </div>
+
+  <div class="sim"><span>Teste o caminho de quem recebe o convite</span><button class="btn ghost" type="button" id="sim-invite">Simular convite recebido por Felipe</button></div>
 
   <div class="mine-bar">
     <div class="films">
@@ -121,9 +133,36 @@
   </form>
 </dialog>
 
+<dialog id="mail" aria-labelledby="ml-title">
+  <form method="dialog" class="dlg">
+    <span class="kicker">1 · Caixa de entrada de Felipe</span>
+    <div class="mail">
+      <div class="mail-h">De Radar de Festivais &lt;avisos@radardefestivais.com.br&gt;<br>Para felipe.monteiro@gmail.com<br>Assunto <b style="color:var(--fg)">Ana Elisa convidou você para o projeto Cuidado com o que deseja</b></div>
+      <div class="mail-b">
+        <h2 id="ml-title" style="font-family:var(--f-display);font-weight:400;font-size:28px;margin:0">Você foi convidado para planejar a circulação de <em>Cuidado com o que deseja</em></h2>
+        <p style="margin:0">Ana Elisa convidou você como <b>editor</b>. Você vai ver os festivais do projeto, a situação de cada inscrição, o checklist e as notas que a equipe compartilhar.</p>
+        <p style="margin:0" class="muted small">Entre no Radar com a conta Google deste e-mail, felipe.monteiro@gmail.com.</p>
+        <button type="button" class="btn" id="ml-open" style="align-self:flex-start">Abrir o convite</button>
+      </div>
+    </div>
+    <p class="muted small">Se a pessoa já estiver com o Radar aberto, também aparece um aviso de convite em Meus salvos.</p>
+  </form>
+</dialog>
+
+<dialog id="login" aria-labelledby="lg-title">
+  <form method="dialog" class="dlg">
+    <span class="kicker">2 · Entrar no Radar</span>
+    <h2 id="lg-title">Entre para aceitar o convite</h2>
+    <p class="muted small">O convite é para felipe.monteiro@gmail.com. Escolha a conta Google desse e-mail.</p>
+    <button type="button" class="acct" data-ok="0"><span class="av" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--fg);display:grid;place-items:center;font-size:11px">FM</span><span>Felipe Monteiro<br><span class="muted small">felipe@camisapreta.com.br</span></span></button>
+    <button type="button" class="acct" data-ok="1"><span class="av" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--fg);display:grid;place-items:center;font-size:11px">FM</span><span>Felipe Monteiro<br><span class="muted small">felipe.monteiro@gmail.com</span></span></button>
+    <p class="err" id="lg-err" hidden>Este convite foi enviado para felipe.monteiro@gmail.com, e você entrou como felipe@camisapreta.com.br. Saia e entre com a conta certa, ou peça a Ana Elisa um convite para este e-mail.</p>
+  </form>
+</dialog>
+
 <dialog id="prefs" aria-labelledby="pr-title">
   <form method="dialog" class="dlg">
-    <span class="kicker">Convite aceito</span>
+    <span class="kicker">3 · Convite aceito</span>
     <h2 id="pr-title">Que e-mails você quer receber deste projeto?</h2>
     <p class="muted small">No site, você tem acesso ao projeto conforme o seu perfil. Os e-mails são só seus, e dá para mudar depois em Seu perfil.</p>
     <label class="check"><input type="checkbox" checked><span>Lembretes de prazo dos festivais do projeto</span></label>
@@ -144,7 +183,7 @@
       <span class="eyebrow">Notas</span>
       <div id="notes"></div>
       <div class="newnote" style="margin-top:10px"><input id="nn" placeholder="Escreva uma nota"><button class="btn ghost" type="button" id="nn-add">Adicionar</button></div>
-      <p class="muted small" style="margin-top:8px">Notas novas começam privadas. Ligue o botão para a equipe ver.</p>
+      <p class="muted small" style="margin-top:8px">Notas novas começam privadas. Toque em Privada para compartilhar com a equipe.</p>
     </div>
     <div class="dt-actions">
       <select id="dt-status" class="edit-only" aria-label="Situação"><option>Quero inscrever</option><option>Inscrito</option><option>Selecionado</option><option>Não selecionado</option></select>
@@ -195,6 +234,7 @@ function renderTop() {
   const n = members.filter((m) => m.st === "ok").length;
   $("#team-txt").textContent = n > 1 ? `${n} pessoas` : "só você";
   $("#team-btn-txt").textContent = owner() ? "Convidar equipe" : "Ver equipe";
+  $("#open-team svg").innerHTML = owner() ? '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/>' : '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.8 0 4.9 2 5.5 5"/>';
   renderRows();
 }
 function renderRows() {
@@ -212,13 +252,15 @@ function renderTeam() {
     const sub = m.st === "pend" ? "convite enviado, aguardando" : m.id === me ? "você" : "";
     let right = `<span class="role">${roleTxt[p.role]}</span>`;
     if (owner() && p.role !== "criadora") {
-      right = `<select data-m="${m.id}" aria-label="Perfil de ${p.n}"><option value="editor"${p.role === "editor" ? " selected" : ""}>Editor</option><option value="leitor"${p.role === "leitor" ? " selected" : ""}>Apenas visualização</option><option value="x">Remover do projeto</option></select>`;
+      const extra = m.st === "pend" ? `<option value="r">Reenviar convite</option><option value="x">Cancelar convite</option>` : `<option value="x">Remover do projeto</option>`;
+      right = `<select data-m="${m.id}" aria-label="Perfil de ${p.n}"><option value="editor"${p.role === "editor" ? " selected" : ""}>Editor</option><option value="leitor"${p.role === "leitor" ? " selected" : ""}>Apenas visualização</option>${extra}</select>`;
     }
     return `<div class="mrow"><span class="av ${m.id === me ? "me" : ""}">${p.i}</span><span>${p.n}<small>${sub}</small></span>${right}</div>`;
   }).join("");
   document.querySelectorAll("#mem select").forEach((s) => (s.onchange = () => {
     const id = s.dataset.m;
-    if (s.value === "x") { members = members.filter((m) => m.id !== id); toast("Pessoa removida do projeto"); }
+    if (s.value === "r") { toast("Convite reenviado"); renderTeam(); return; }
+    if (s.value === "x") { const pend = members.find((m) => m.id === id).st === "pend"; members = members.filter((m) => m.id !== id); toast(pend ? "Convite cancelado" : "Pessoa removida do projeto"); }
     else { (people[id] || members.find((m) => m.id === id)).role = s.value; toast("Perfil alterado"); }
     renderTeam(); renderTop();
   }));
@@ -257,13 +299,13 @@ function openDetail(id) {
       const mine = x.by === me;
       const lock = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
       const team = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.8 0 4.9 2 5.5 5"/></svg>`;
-      const who = mine ? (x.sh ? "sua nota, a equipe vê" : "sua nota, só você vê") : `nota de ${people[x.by].n}`;
-      const ctl = mine ? `<label class="sw"><input type="checkbox" data-i="${f.notes.indexOf(x)}"${x.sh ? " checked" : ""}>Equipe vê</label>` : "";
+      const who = mine ? (x.sh ? "sua nota, visível para a equipe" : "sua nota, só você vê") : `nota de ${people[x.by].n}`;
+      const ctl = mine ? `<button type="button" class="vis${x.sh ? " on" : ""}" data-i="${f.notes.indexOf(x)}" aria-pressed="${x.sh}" title="${x.sh ? "Toque para tornar privada" : "Toque para compartilhar com a equipe"}">${x.sh ? team + "Compartilhada" : lock + "Privada"}</button>` : "";
       return `<div class="note">${x.sh ? team : lock}<span>${x.t}<span class="who">${who}</span></span>${ctl}</div>`;
     }).join("") || `<p class="muted small">Nenhuma nota ainda.</p>`;
-    document.querySelectorAll("#notes input").forEach((c) => (c.onchange = () => {
-      f.notes[+c.dataset.i].sh = c.checked; draw(); renderRows();
-      toast(c.checked ? "A equipe agora vê esta nota" : "Nota voltou a ser só sua");
+    document.querySelectorAll("#notes .vis").forEach((c) => (c.onclick = () => {
+      const n = f.notes[+c.dataset.i]; n.sh = !n.sh; draw(); renderRows();
+      toast(n.sh ? "Nota compartilhada com a equipe" : "Nota agora é privada");
     }));
   };
   draw();
@@ -277,6 +319,14 @@ document.querySelectorAll("[data-as]").forEach((b) => (b.onclick = () => {
   document.querySelectorAll("[data-as]").forEach((x) => x.setAttribute("aria-pressed", x === b));
   me = b.dataset.as; renderTop();
   if (me !== "ana") $("#prefs").showModal();
+}));
+$("#sim-invite").onclick = () => $("#mail").showModal();
+$("#ml-open").onclick = () => { $("#mail").close(); $("#lg-err").hidden = true; $("#login").showModal(); };
+document.querySelectorAll(".acct").forEach((a) => (a.onclick = () => {
+  if (a.dataset.ok !== "1") { $("#lg-err").hidden = false; return; }
+  $("#login").close();
+  document.querySelectorAll("[data-as]").forEach((x) => x.setAttribute("aria-pressed", x.dataset.as === "felipe"));
+  me = "felipe"; renderTop(); $("#prefs").showModal();
 }));
 renderTop();
 </script>
