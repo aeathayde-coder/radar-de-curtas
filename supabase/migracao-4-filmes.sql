@@ -48,5 +48,16 @@ alter table public.saved_festivals alter column film_id set not null;
 alter table public.saved_festivals drop constraint if exists saved_festivals_pkey;
 alter table public.saved_festivals add primary key (user_id, film_id, festival_id);
 
+-- Salvar e mover só para listas da própria pessoa
+drop policy if exists "salvos: inserir os próprios" on public.saved_festivals;
+create policy "salvos: inserir os próprios" on public.saved_festivals
+  for insert to authenticated
+  with check ((select auth.uid()) = user_id and exists (select 1 from public.films f where f.id = film_id and f.user_id = (select auth.uid())));
+drop policy if exists "salvos: atualizar os próprios" on public.saved_festivals;
+create policy "salvos: atualizar os próprios" on public.saved_festivals
+  for update to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id and exists (select 1 from public.films f where f.id = film_id and f.user_id = (select auth.uid())));
+
 revoke update on public.saved_festivals from authenticated, anon;
-grant update (status, notes, checklist, award) on public.saved_festivals to authenticated;
+grant update (status, notes, checklist, award, film_id) on public.saved_festivals to authenticated;

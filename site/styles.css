@@ -594,3 +594,6 @@ td.notes .flag.gen{border-style:dotted;white-space:normal;max-width:100%}
 .si-newbox{display:flex;gap:10px;align-items:flex-end;margin-top:12px;flex-wrap:wrap}
 .si-newbox .fld{flex:1;min-width:180px}
 .si-newbox[hidden]{display:none}
+.move{display:grid;gap:6px;margin-top:18px;padding-top:14px;border-top:1px dotted var(--muted);font-size:14px}
+.move select{max-width:320px}
+.move small{color:var(--muted);font-size:13px}

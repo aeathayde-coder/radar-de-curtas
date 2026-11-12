@@ -806,6 +806,7 @@ function inscricaoHTML(f) {
     <form class="ck-add" id="in-ck-add"><input id="in-ck-new" maxlength="120" placeholder="Adicionar item" aria-label="Novo item do checklist"><button class="btn ghost">Adicionar</button></form>
     <label class="kicker" for="in-notes">Notas (só você vê)</label>
     <textarea id="in-notes" maxlength="4000" rows="4" placeholder="Senha do link enviado, contatos da curadoria, datas importantes…">${esc(r.notes || "")}</textarea>
+    ${S.films.length > 1 ? `<div class="move"><label for="in-move">Mover para outra lista</label><select id="in-move"><option value="">escolha a lista</option>${S.films.filter((x) => x.id !== S.film).map((x) => `<option value="${esc(x.id)}">${esc(x.title)}</option>`).join("")}</select><small>A situação, o checklist e as notas vão junto.</small></div>` : ""}
     <p class="muted small" id="in-status" aria-live="polite"></p>
   </section>`;
 }
@@ -825,7 +826,25 @@ function bindInscricao(f) {
   $("#in-ck").onclick = (e) => { if (e.target.classList.contains("ck-del")) { list.splice(+e.target.dataset.i, 1); save(); } };
   $("#in-ck-add").onsubmit = (e) => { e.preventDefault(); const t = $("#in-ck-new").value.trim(); if (!t) return; list.push({ t: t.slice(0, 120), d: false }); save(); };
   $("#in-notes").onchange = (e) => saveRow(f.id, { notes: e.target.value.slice(0, 4000) || null });
+  if ($("#in-move")) $("#in-move").onchange = (e) => e.target.value && moveRow(f.id, e.target.value);
   if ($("#in-award")) $("#in-award").onchange = (e) => saveRow(f.id, { award: e.target.value.trim().slice(0, 200) || null });
+}
+
+// Move o festival salvo de uma lista para outra, levando situação, checklist e notas
+async function moveRow(fid, to) {
+  const from = S.film;
+  const target = S.films.find((x) => x.id === to);
+  if (S.rows.some((r) => r.festival_id === fid && r.film_id === to)) {
+    $("#in-move").value = "";
+    return toast(`Este festival já está em “${target?.title}”.`);
+  }
+  const { error } = await rowQuery(S.sb.from("saved_festivals").update({ film_id: to }), fid);
+  if (error) { console.error(error); $("#in-move").value = ""; return toast("Não foi possível mover. Tente de novo."); }
+  const r = S.rows.find((x) => x.festival_id === fid && x.film_id === from);
+  if (r) r.film_id = to;
+  applyFilm(); renderAccount(); renderTable();
+  $("#detail").close();
+  toast(`Movido para “${target?.title}”.`);
 }
 
 // ——— relatório de circulação (página para imprimir ou salvar em PDF) ———

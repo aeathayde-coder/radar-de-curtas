@@ -315,6 +315,24 @@ export function createClient() {
   console.log("Curta Cinema em", nrows, "filmes");
   assert.equal(nrows, 2);
   await z.click("#savein button[value=close]");
+  // mover Go Short do primeiro projeto para o segundo, levando as notas
+  await z.click("#account #nav-saved");
+  await z.waitForTimeout(150);
+  await z.click("#films [data-film] >> nth=0");
+  await z.waitForTimeout(150);
+  await z.locator("#tb tr", { hasText: "Go Short" }).first().locator("td.ev").click();
+  await z.waitForSelector("#detail[open] #in-move");
+  await z.fill("#in-notes", "nota que vai junto");
+  await z.locator("#in-notes").blur();
+  await z.waitForTimeout(150);
+  await z.locator("#detail .move").screenshot({ path: `${out}/v4-mover.png` });
+  await z.selectOption("#in-move", { label: "Curta do baterista" });
+  await z.waitForTimeout(200);
+  console.log("mover:", await z.textContent("#toast"));
+  const moved = await z.evaluate(() => { const b = window.__db.films.find((f) => f.title === "Curta do baterista"); return window.__db.saved_festivals.filter((r) => r.festival_id.startsWith("go-short")).map((r) => [r.film_id === b.id, r.notes]); });
+  console.log("go short:", JSON.stringify(moved));
+  assert.deepEqual(moved, [[true, "nota que vai junto"]]);
+  await z.click("#mine-all");
 
   // filtro "Fecham em 30 dias" e "Mostrar mais"
   await z.click("[data-s='hot']");
