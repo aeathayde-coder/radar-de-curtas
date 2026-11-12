@@ -479,9 +479,11 @@ async function loadUserData() {
     if (ss.error) S.v3 = false;
   }
   // Migração 4 (planejamento por filme): os salvos passam a pertencer a um filme
-  S.v4 = false;
+  S.v4 = false; S.noGeneral = false;
   if (S.v3) {
-    const fl = await S.sb.from("films").select(FILM_COLS).order("created_at");
+    let fl = await S.sb.from("films").select(FILM_COLS).order("created_at");
+    // Migração 4 antiga (sem "Para acompanhar"): funciona com os projetos, sem a lista geral
+    if (fl.error) { fl = await S.sb.from("films").select(FILM_COLS.replace(",general", "")).order("created_at"); if (!fl.error) S.noGeneral = true; }
     if (!fl.error) {
       const rows = await S.sb.from("saved_festivals").select("festival_id,film_id,status,notes,checklist,award");
       if (!rows.error) {
@@ -619,7 +621,7 @@ function openSaveIn(id) {
   $("#si-title").textContent = f ? f.name : "";
   // "Para acompanhar" aparece sempre, mesmo antes de existir: é criada no primeiro uso
   const gen = generalOf() || { id: "__geral", title: GENERAL_TITLE, general: true };
-  const list = [gen, ...S.films.filter((x) => !x.general)];
+  const list = [...(S.noGeneral ? [] : [gen]), ...S.films.filter((x) => !x.general)];
   $("#si-list").innerHTML = list.map((x) => {
     const on = S.rows.some((r) => r.festival_id === id && r.film_id === x.id);
     const hint = x.general ? `<small>sem projeto, apenas para acompanhar os prazos</small>` : "";
