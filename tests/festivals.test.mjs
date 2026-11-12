@@ -12,8 +12,13 @@ test("colunas novas: qualificação, estreia, restrições, temas", () => {
   assert.deepEqual(by("zinebi").qualifies, ["Oscar", "BAFTA", "EFA", "Goya"]);
   assert.deepEqual(by("clermont-ferrand").qualifies, ["Oscar", "BAFTA", "EFA"]);
   assert.equal(by("veneza").premiere, "Mundial");
-  assert.equal(by("go-short").restrictions, "Competição europeia: só produções europeias");
+  assert.equal(by("go-short").restrictions, "Competição europeia: apenas produções europeias");
   assert.deepEqual(by("filmambiente").themes, ["Meio ambiente"]);
+  assert.equal(by("mostra-tiradentes").origin, "national");
+  assert.equal(by("curta-canoa").origin, "regional-br");
+  assert.equal(by("go-short").origin, "regional");
+  assert.equal(by("clermont-ferrand").origin, "any");
+  for (const f of list) assert.ok(f.origin, `Origem aceita vazia em ${f.id}`);
   assert.equal(by("tampere").rulesUrl, null);
   const rows = parseCSV("Nome,Qualificação,Regulamento\nX,\"oscar qualifying; BAFTA\",https://x.org/reg.pdf\n");
   const [x] = rowsToFestivals(rows);
@@ -102,4 +107,17 @@ test("busca da planilha publicada e erro claro quando o link não é CSV", async
     globalThis.fetch = async () => new Response("<!DOCTYPE html><html>");
     await assert.rejects(fetchFestivals({ csvUrl: "https://x", fresh: true }), /publique a aba/);
   } finally { globalThis.fetch = orig; }
+});
+
+test("lembretes: mesmo festival salvo em dois filmes gera um aviso só", () => {
+  const f = { id: "x", name: "X", deadline: "2026-12-12", dateStatus: "Confirmada" };
+  const prof = { email: "a@b.c", email_opt_in: true, reminder_days: [30] };
+  const out = selectReminders({ saved: [{ user_id: "u", festival_id: "x", profiles: prof }, { user_id: "u", festival_id: "x", profiles: prof }], festivals: [f], today: "2026-11-12" });
+  assert.equal(out[0].items.length, 1);
+});
+
+test("busca ignora palavras genéricas como 'film festival'", async () => {
+  const { queryTerms } = await import("../site/filtros.js");
+  assert.deepEqual(queryTerms("Locarno Film Festival").map((a) => a[0]), ["locarno"]);
+  assert.deepEqual(queryTerms("festival").map((a) => a[0]), ["festival"]);
 });
