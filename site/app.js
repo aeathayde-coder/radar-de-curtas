@@ -117,7 +117,7 @@ function writeURL() {
 // ——— filtros ———
 const ORIGIN_LABEL = {
   any: "Filmes de qualquer país",
-  national: "Só filmes do país do festival",
+  national: "Apenas filmes do país do festival",
   "regional-br": "Recorte regional (inclui o Brasil)",
   regional: "Recorte regional (não inclui o Brasil)",
 };
