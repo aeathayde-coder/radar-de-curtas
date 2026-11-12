@@ -19,3 +19,12 @@ for (const f of files) {
     assert.deepEqual(bad, [], `travessão (—) encontrado em ${f}`);
   });
 }
+
+// Restrições aparecem como etiqueta vermelha no site: "Apenas filmes brasileiros", nunca "Só ..."
+test("restrições usam 'Apenas', não 'Só'", async () => {
+  const { parseCSV } = await import("../site/sheet.js");
+  const [head, ...rows] = parseCSV(readFileSync(new URL("dados/festivais.csv", root), "utf8"));
+  const i = head.indexOf("Restrições");
+  const bad = rows.map((r) => r[i] || "").filter((v) => /(^|[;:]\s*)Só |\bsó\b/.test(v));
+  assert.deepEqual(bad, []);
+});
