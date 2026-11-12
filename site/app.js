@@ -195,16 +195,25 @@ function renderStrip() {
     .join("");
 }
 
+const CUR_SYM = { BRL: "R$ ", EUR: "€", USD: "US$ ", GBP: "£", CHF: "CHF " };
+function feeShort(f) {
+  if (f.feeValue === 0) return "Inscrição gratuita";
+  if (f.feeValue != null) return `Taxa atual: ${CUR_SYM[f.feeCurrency] || (f.feeCurrency ? f.feeCurrency + " " : "")}${String(f.feeValue).replace(".", ",")}`;
+  if (!f.fee) return "";
+  return `Inscrição: ${esc(f.fee.length > 70 ? f.fee.slice(0, 68).replace(/\s+\S*$/, "") + "…" : f.fee)}`;
+}
+
 function reqCell(f) {
   const flags = [];
   f.qualifies.forEach((q) => flags.push(`<span class="flag q" title="Qualifica para ${esc(QUAL_LABEL[q])}">${esc(q)}</span>`));
   if (f.maxDuration != null) flags.push(`<span class="flag dur">até ${f.maxDuration} min</span>`);
-  f.genres.forEach((g) => flags.push(`<span class="flag">${esc(g)}</span>`));
-  if (f.premiere) flags.push(`<span class="flag prem">estreia: ${esc(f.premiere.toLowerCase())}</span>`);
+  // Lista enxuta: gêneros numa linha só, taxa atual em vez do texto completo (que fica na ficha)
+  if (f.genres.length) flags.push(`<span class="flag gen">${esc(f.genres.join(" · "))}</span>`);
+  if (f.premiere) flags.push(`<span class="flag prem">estreia: ${esc(f.premiere.charAt(0).toLowerCase() + f.premiere.slice(1))}</span>`);
   if (f.restrictions) flags.push(`<span class="flag warn">${esc(f.restrictions)}</span>`);
   const lines = [];
-  if (f.fee) lines.push(`Inscrição: ${esc(f.fee)}`);
-  if (f.benefit) lines.push(esc(f.benefit));
+  const fee = feeShort(f);
+  if (fee) lines.push(fee);
   return `${flags.length ? `<div class="req">${flags.join("")}</div>` : ""}${lines.join("<br>") || (flags.length ? "" : "Requisitos não informados; ver regulamento.")}`;
 }
 
@@ -623,6 +632,18 @@ async function openAgenda() {
   $("#agenda").showModal();
 }
 
+// ——— compartilhar: no celular abre o menu de compartilhamento; no computador copia o link ———
+const SHARE_ICO = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3.5"/><path d="m7.5 8 4.5-4.5L16.5 8"/><path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5"/></svg>`;
+async function shareFestival(f) {
+  const url = `${location.origin}/festival/${encodeURIComponent(f.id)}.html`;
+  const coarse = matchMedia("(pointer: coarse)").matches;
+  if (coarse && navigator.share) {
+    try { await navigator.share({ title: f.name, text: `${f.name} no Radar de Festivais`, url }); return; } catch (e) { if (e.name === "AbortError") return; }
+  }
+  try { await navigator.clipboard.writeText(url); toast("Link copiado."); }
+  catch { prompt("Copie o link:", url); }
+}
+
 // ——— ficha do festival ———
 let detailId = null;
 function refreshDetail(id) { if ($("#detail").open && detailId === id) openDetail(id); }
@@ -648,7 +669,6 @@ function openDetail(id) {
   add("Prêmios e benefícios", esc(f.benefit));
   add("Observações", esc(f.notes));
   add("Última verificação", f.checkedAt ? fmt(f.checkedAt) : "");
-  add("Link para compartilhar", `<a href="/festival/${encodeURIComponent(f.id)}.html">radardefestivais.com.br/festival/${esc(f.id)}</a>`);
   $("#dt-where").textContent = f.scope === "BR" ? "Brasil" : f.country || "";
   $("#dt-title").textContent = f.name;
   $("#dt-body").innerHTML = `<dl class="dl">${rows.join("")}</dl>`;
@@ -657,6 +677,7 @@ function openDetail(id) {
   const acts = [];
   if (f.url) acts.push(`<a class="btn" href="${esc(f.url)}" target="_blank" rel="noopener">Página de inscrição ↗</a>`);
   if (f.rulesUrl) acts.push(`<a class="btn ghost" href="${esc(f.rulesUrl)}" target="_blank" rel="noopener">Regulamento ↗</a>`);
+  acts.push(`<button class="btn ghost" id="dt-share">${SHARE_ICO} Compartilhar</button>`);
   acts.push(`<button class="btn ghost" id="dt-save">${saved ? "★ Salvo" : "☆ Salvar"}</button>`);
   if (saved && S.trackSupported) {
     const cur = S.track.get(id) || "quero";
@@ -668,6 +689,7 @@ function openDetail(id) {
   }
   $("#dt-actions").innerHTML = acts.join("");
   $("#dt-save").onclick = () => toggleSave(id);
+  $("#dt-share").onclick = () => shareFestival(f);
   if ($("#dt-track")) $("#dt-track").onchange = (e) => setTrack(id, e.target.value);
   if ($("#dt-ics")) $("#dt-ics").onclick = () => downloadICS([f], `prazo-${f.id}.ics`);
   if (!$("#detail").open) $("#detail").showModal();

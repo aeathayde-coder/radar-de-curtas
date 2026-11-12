@@ -68,6 +68,7 @@ export function page(f, all, shell, today = new Date().toISOString().slice(0, 10
     f.url ? `<a class="btn" href="${esc(f.url)}" target="_blank" rel="noopener">Página de inscrição ↗</a>` : "",
     f.rulesUrl ? `<a class="btn ghost" href="${esc(f.rulesUrl)}" target="_blank" rel="noopener">Regulamento ↗</a>` : "",
     `<a class="btn ghost" href="/?f=${encodeURIComponent(f.id)}">☆ Salvar e receber lembretes</a>`,
+    `<button class="btn ghost" id="fp-share" type="button">Compartilhar</button>`,
   ].join("");
 
   const rel = related(f, all, today)
@@ -96,6 +97,14 @@ export function page(f, all, shell, today = new Date().toISOString().slice(0, 10
   </main>
 </div>
 <script>
+(function () {
+  var b = document.getElementById("fp-share"); if (!b) return;
+  b.onclick = function () {
+    var url = location.href.split("#")[0].split("?")[0], t = document.title;
+    if (matchMedia("(pointer: coarse)").matches && navigator.share) { navigator.share({ title: t, url: url }).catch(function () {}); return; }
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { b.textContent = "Link copiado"; setTimeout(function () { b.textContent = "Compartilhar"; }, 2500); }, function () { prompt("Copie o link:", url); });
+  };
+})();
 (function () {
   var el = document.getElementById("fp-st"); var dl = el && el.dataset.deadline; if (!dl) return;
   var now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
