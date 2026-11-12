@@ -72,7 +72,7 @@ export function createClient() {
   await page.waitForTimeout(100);
   const names = await page.locator("#tb td.name .fname").allTextContents();
   console.log("animação + 20min:", names.length, names.map((n) => n.slice(0, 20)));
-  assert.ok(!names.some((n) => n.startsWith("Cannes: Competição de curtas")), "Cannes, competição de curtas (≤15 min), deve sair");
+  assert.ok(!names.some((n) => n.startsWith("Festival de Cannes: Competição de curtas")), "Cannes, competição de curtas (≤15 min), deve sair");
   assert.ok(!names.some((n) => n.startsWith("Fantaspoa")), "Fantaspoa (só fantástico) deve sair");
   assert.ok(names.some((n) => n.startsWith("Annecy")));
   console.log("URL:", new URL(page.url()).search);
@@ -254,7 +254,7 @@ export function createClient() {
   await z.click("#si-create");
   await z.waitForTimeout(200);
   await z.click("#savein button[value=close]");
-  for (const n of ["Go Short", "Cannes: Competição"]) {
+  for (const n of ["Go Short", "Festival de Cannes: Competição"]) {
     await z.locator("#tb tr", { hasText: n }).first().locator(".star").click();
     await z.waitForSelector("#savein[open]");
     await z.check("#si-list input >> nth=1");
