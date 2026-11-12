@@ -32,8 +32,9 @@ tests/                   testes e preview local
 | Última verificação | Data. A mais recente aparece no topo do site. |
 | Publicar | "Não" esconde a linha sem apagar. |
 | Qualificação | Prêmios para os quais o festival é qualificador: Oscar, BAFTA, EFA (European Film Awards), Goya. Separados por vírgula. Vira selo verde e filtro. |
-| Exigência de estreia | Ex.: Mundial · Internacional · Inédito no RS · Não exige. "Não exige" alimenta o filtro "Só os que não exigem estreia". |
+| Exigência de estreia | Ex.: Mundial · Internacional · Inédito no RS · Não exige. "Não exige" alimenta o filtro "Não exigem estreia". |
 | Restrições | Quem pode inscrever, quando há limite: "Só filmes brasileiros", "Só filmes de escolas de cinema", "Diretores sem longa-metragem". Aparece em vermelho. |
+| Origem aceita | Nacionalidade do filme aceita nas competições (país de produção, não o passaporte de quem dirige): Qualquer país · Nacional (só do país do festival) · Regional com Brasil (ex.: latino-americanos, ibero-americanos) · Regional sem Brasil (ex.: só europeus). Se ao menos uma competição for aberta ao mundo, use Qualquer país. Alimenta os filtros "Aceitam filmes brasileiros" e "Abertos a filmes de qualquer país". Vazio = não informado. |
 | Temas | Recorte temático, separado por vírgula (Meio ambiente, Direitos humanos, LGBTQIA+…). Vira filtro quando houver algum preenchido. |
 | Observações | Texto público que aparece na ficha do festival. |
 | Regulamento | Link direto para o regulamento (https://…). Vira botão na ficha. |
@@ -61,6 +62,12 @@ Os nomes das colunas podem estar em qualquer ordem e não importa se têm acento
 
 ### 1b. Supabase: acompanhamento dos salvos (opcional)
 Rode `supabase/migracao-2-acompanhamento.sql` no SQL Editor, do mesmo jeito que o `schema.sql`. Ela libera, na ficha de cada festival salvo, o seletor de situação: Quero inscrever · Inscrito · Selecionado · Não selecionado. Festivais marcados como Inscrito, Selecionado ou Não selecionado deixam de gerar lembrete de prazo. Sem essa migração, o site funciona normalmente, só sem o seletor.
+
+Rode também `supabase/migracao-3-avisos-agenda-buscas.sql`. Ela libera três recursos:
+- **Aviso de mudança nos salvos:** a função agendada `novidades` (todo dia às 8h30) compara a base com a do dia anterior e registra datas confirmadas, prazos alterados e festivais novos. Às quartas, envia um e-mail por pessoa com as mudanças nos festivais salvos (pode ser desligado no perfil).
+- **Agenda assinável:** em Meus salvos, "Assinar agenda" cria um link pessoal (`/agenda/<código>.ics`, função `agenda`) que o Google Agenda, a Apple e o Outlook atualizam sozinhos.
+- **Buscas salvas:** com filtros ativos, "Salvar esta busca" guarda os filtros; no e-mail de quarta entram os festivais novos que combinam com cada busca.
+Sem essa migração, o site funciona como antes, sem esses botões. A primeira execução da função `novidades` só tira a "foto" da base; os avisos começam a partir da segunda.
 
 ### 2. Resend: e-mails
 1. Crie uma conta em https://resend.com → **API Keys** → crie uma chave com permissão *Sending access* (`RESEND_API_KEY`).

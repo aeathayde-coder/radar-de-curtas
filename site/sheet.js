@@ -51,6 +51,8 @@ const slug = (s) => key(s).replace(/ /g, "-").slice(0, 48);
 const safeUrl = (u) => (u && /^https?:\/\//i.test(u) ? u : null);
 const NO = new Set(["nao", "n", "false", "0", "ocultar"]);
 const STATUS = { confirmada: "Confirmada", estimada: "Estimada", "a confirmar": "A confirmar" };
+// Origem aceita (nacionalidade do filme nas competições): qualquer país, só do país do festival ou recorte regional
+const ORIGIN = { "qualquer pais": "any", nacional: "national", "regional com brasil": "regional-br", "regional sem brasil": "regional" };
 
 // Cabeçalhos aceitos (sem acento/maiúsculas): o nome da coluna pode variar um pouco
 const COLS = {
@@ -73,6 +75,7 @@ const COLS = {
   qualifies: ["qualificacao", "qualificacoes", "qualifica para"],
   premiere: ["exigencia de estreia", "estreia"],
   restrictions: ["restricoes", "restricao", "quem pode inscrever"],
+  origin: ["origem aceita", "origem"],
   themes: ["temas", "tema"],
   notes: ["observacoes", "observacao", "notas publicas"],
   rules: ["regulamento", "link do regulamento"],
@@ -102,13 +105,14 @@ export function rowsToFestivals(rows) {
     const local = clean(get(r, "local"));
     const country = clean(get(r, "country")) || deriveCountry(local);
     const dur = parseFloat(String(get(r, "maxDuration") || "").replace(",", "."));
+    const scope = country && key(country) === "brasil" ? "BR" : "INT";
     out.push({
       id,
       name,
       url: safeUrl(clean(get(r, "url"))),
       local,
       country,
-      scope: country && key(country) === "brasil" ? "BR" : "INT",
+      scope,
       deadline: parseDate(get(r, "deadline")),
       dateStatus: STATUS[key(get(r, "dateStatus") || "")] || "A confirmar",
       event: clean(get(r, "event")),
@@ -122,6 +126,7 @@ export function rowsToFestivals(rows) {
       qualifies: (() => { const raw = list(get(r, "qualifies")).join(" "); return QUAL.filter(([, re]) => re.test(raw)).map(([n]) => n); })(),
       premiere: clean(get(r, "premiere")),
       restrictions: clean(get(r, "restrictions")),
+      origin: ORIGIN[key(get(r, "origin") || "")] || null,
       themes: list(get(r, "themes")),
       notes: clean(get(r, "notes")),
       rulesUrl: safeUrl(clean(get(r, "rules"))),

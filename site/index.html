@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Radar de Festivais</title>
+<title>Radar de Festivais · Inscrições em festivais de curta-metragem</title>
 <meta name="description" content="Site brasileiro com prazos de inscrição e informações de festivais de curta-metragem nacionais e internacionais. Busque por gênero, país, duração e qualificação para o Oscar, salve e receba lembretes.">
 <meta property="og:url" content="https://www.radardefestivais.com.br/">
 <meta property="og:type" content="website">
@@ -36,11 +36,11 @@
   <p class="lede-note">*Banco de dados atualizado semanalmente.</p>
   </div>
     <ul class="how">
-      <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></span><div><b>Busque</b><span>onde inscrever seu filme: por nome, gênero, país, duração e o que mais importar para o seu filme.</span></div></li>
-      <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></span><div><b>Salve</b><span>os festivais que fazem sentido para você e acompanhe tudo no seu perfil.</span></div></li>
-      <li><span class="ico" aria-hidden="true"></span><div><b>Calcule</b><span>quanto vai investir em inscrições: o site soma as taxas dos seus festivais e converte para reais.</span></div></li>
-      <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></span><div><b>Receba lembretes</b><span>por e-mail antes dos prazos, no seu ritmo.</span></div></li>
-      <li><span class="ico" aria-hidden="true"></span><div><b>Exporte</b><span>seus prazos para a agenda e seu planejamento com custos em planilha.</span></div></li>
+      <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></span><div><b>Busque</b> <span>onde inscrever seu filme: por nome, gênero, país, duração e o que mais importar para o seu filme.</span></div></li>
+      <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></span><div><b>Salve</b> <span>os festivais que fazem sentido para você e acompanhe tudo no seu perfil.</span></div></li>
+      <li><span class="ico" aria-hidden="true"></span><div><b>Calcule</b> <span>quanto vai investir em inscrições: o site soma as taxas dos seus festivais e converte para reais.</span></div></li>
+      <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></span><div><b>Receba lembretes</b> <span>por e-mail antes dos prazos, no seu ritmo.</span></div></li>
+      <li><span class="ico" aria-hidden="true"></span><div><b>Exporte</b> <span>seus prazos para a agenda e baixe uma planilha com seu planejamento e custos.</span></div></li>
     </ul>
     <p class="free">Navegar é livre.</p>
     <p class="guide-line">Primeira vez inscrevendo um filme? <a href="/por-onde-comecar.html">Veja por onde começar</a></p>
@@ -90,15 +90,23 @@
       <div class="checks">
       <label class="check">
         <input type="checkbox" id="free">
-        <span>Só com inscrição gratuita</span>
+        <span>Com inscrição gratuita</span>
       </label>
       <label class="check">
         <input type="checkbox" id="nopremiere">
-        <span>Só os que não exigem estreia</span>
+        <span>Não exigem estreia</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="acceptsbr">
+        <span>Aceitam filmes brasileiros</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="anyorigin">
+        <span>Abertos a filmes de qualquer país</span>
       </label>
       <label class="check">
         <input type="checkbox" id="unknown" checked>
-        <span>Incluir festivais sem gênero ou duração informados</span>
+        <span>Incluir festivais sem gênero, duração ou origem informados</span>
       </label>
       </div>
       <button class="link-btn" id="adv-clear">Limpar filtros</button>
@@ -109,21 +117,26 @@
 <div class="wrap">
   <section aria-labelledby="h-prox">
     <div class="sh">
-      <div><span class="kicker">01 — inscrições que encerram nos próximos 90 dias</span><h2 id="h-prox">Em nosso <em>radar</em></h2></div>
+      <div><span class="kicker">01 · inscrições que encerram nos próximos 90 dias</span><h2 id="h-prox">Em nosso <em>radar</em></h2></div>
       <div class="arrows"><button id="strip-prev" aria-label="Anteriores">←</button><button id="strip-next" aria-label="Próximos">→</button></div>
     </div>
     <div class="strip" id="strip"><p class="muted">Carregando…</p></div>
   </section>
 
   <section aria-labelledby="h-all" class="stack" id="lista">
-    <div class="sh"><div><span class="kicker" id="k-all">02 — base completa</span><h2 id="h-all">Todos os <em>festivais</em></h2></div></div>
+    <div class="sh"><div><span class="kicker" id="k-all">02 · base completa</span><h2 id="h-all">Todos os <em>festivais</em></h2></div></div>
     <div class="mine-bar" id="mine-bar" hidden>
       <p>Os festivais que você salvou, com a situação de cada inscrição. Toque em um festival para marcar se vai inscrever, se já inscreveu ou se foi selecionado.</p>
       <div class="mine-acts">
         <button class="btn ghost" id="mine-prefs">Lembretes por e-mail</button>
+        <button class="btn" id="mine-cal">Assinar agenda</button>
         <button class="btn ghost" id="mine-ics">Exportar para o calendário</button>
         <button class="btn ghost" id="mine-xlsx">Baixar planilha</button>
         <button class="link-btn" id="mine-all">Ver todos os festivais</button>
+      </div>
+      <div class="searches" id="searches" hidden>
+        <span class="kicker">Suas buscas salvas</span>
+        <ul id="searches-list"></ul>
       </div>
     </div>
     <div class="calc" id="calc" hidden>
@@ -146,6 +159,7 @@
         <button data-sort="status" aria-pressed="false">Situação</button>
       </div>
       <span class="count" id="count" aria-live="polite"></span>
+      <button class="btn ghost save-search" id="save-search" hidden>☆ Salvar esta busca</button>
     </div>
 
     <div class="tablebox">
@@ -208,6 +222,10 @@
       <input type="checkbox" id="pf-optin">
       <span>Receber lembretes por e-mail dos prazos dos festivais salvos</span>
     </label>
+    <label class="check" id="pf-changes-row" hidden>
+      <input type="checkbox" id="pf-changes">
+      <span>Avisar quando um festival salvo mudar (data confirmada ou prazo alterado), num e-mail semanal com as novidades</span>
+    </label>
     <fieldset id="pf-days-set">
       <legend>Avisar quantos dias antes</legend>
       <div class="chips" id="pf-days"></div>
@@ -218,6 +236,22 @@
       <button type="button" class="link-btn" id="pf-logout">Sair</button>
       <button value="close" class="btn">Fechar</button>
     </div>
+  </form>
+</dialog>
+
+<dialog id="agenda" aria-labelledby="ag-title">
+  <form method="dialog" class="dlg">
+    <h2 id="ag-title">Assine sua agenda do Radar</h2>
+    <p>Este link é só seu. Coloque na sua agenda uma vez: os prazos dos festivais salvos aparecem lá e se atualizam sozinhos quando mudam no Radar, inclusive os que você salvar depois.</p>
+    <div class="ag-url"><input id="ag-url" readonly aria-label="Link da sua agenda"><button type="button" class="btn ghost" id="ag-copy">Copiar</button></div>
+    <ol class="ag-steps">
+      <li><b>Google Agenda</b> (no computador): Outras agendas → + → Do URL → cole o link.</li>
+      <li><b>Apple</b> (iPhone, iPad, Mac): <a id="ag-apple" href="#">abrir na agenda</a>.</li>
+      <li><b>Outlook:</b> Adicionar calendário → Assinar da Web → cole o link.</li>
+    </ol>
+    <p class="muted small">A agenda busca as mudanças sozinha, de algumas em algumas horas (o intervalo depende do aplicativo). Não compartilhe o link: quem tiver ele vê seus festivais salvos.</p>
+    <p class="muted small" id="ag-status" aria-live="polite"></p>
+    <div class="dlg-actions"><button value="close" class="btn">Fechar</button></div>
   </form>
 </dialog>
 

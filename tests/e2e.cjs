@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 
 // Supabase simulado: sessão em memória + tabelas em memória
 const FAKE_SUPABASE = `
-const db = { saved_festivals: [], profiles: [{ id: "u1", email: "ana@example.com", email_opt_in: true, reminder_days: [30,7,1] }] };
+const db = { saved_festivals: [], saved_searches: [], profiles: [{ id: "u1", email: "ana@example.com", email_opt_in: true, reminder_days: [30,7,1], change_alerts: true, calendar_token: null }] };
 let session = null, listeners = [];
 function q(table) {
   let filters = [], op = "select", payload = null;
@@ -15,11 +15,13 @@ function q(table) {
     delete() { op = "delete"; return api; },
     update(p) { op = "update"; payload = p; return api; },
     maybeSingle() { api._single = true; return api; },
+    single() { api._single = true; return api; },
+    order() { return api; },
     then(res, rej) {
       const match = (r) => filters.every(([k, v]) => r[k] === v);
       let data = null;
       if (op === "select") { data = db[table].filter(match); if (api._single) data = data[0] || null; }
-      if (op === "insert") db[table].push(payload);
+      if (op === "insert") { const row = { id: String(Math.random()).slice(2), notify: true, ...payload }; db[table].push(row); data = api._single ? row : [row]; }
       if (op === "delete") db[table] = db[table].filter((r) => !match(r));
       if (op === "update") db[table].filter(match).forEach((r) => Object.assign(r, payload));
       window.__db = db;
@@ -70,7 +72,7 @@ export function createClient() {
   await page.waitForTimeout(100);
   const names = await page.locator("#tb td.name .fname").allTextContents();
   console.log("animação + 20min:", names.length, names.map((n) => n.slice(0, 20)));
-  assert.ok(!names.some((n) => n.includes("Competição de curtas")), "Cannes, competição de curtas (≤15 min), deve sair");
+  assert.ok(!names.some((n) => n.startsWith("Cannes: Competição de curtas")), "Cannes, competição de curtas (≤15 min), deve sair");
   assert.ok(!names.some((n) => n.startsWith("Fantaspoa")), "Fantaspoa (só fantástico) deve sair");
   assert.ok(names.some((n) => n.startsWith("Annecy")));
   console.log("URL:", new URL(page.url()).search);
@@ -171,6 +173,38 @@ export function createClient() {
   await v.screenshot({ path: `${out}/v2-detail-logged.png` });
   await v.click("#dt-close");
   console.log("linha com situação:", await v.locator("#tb tr", { hasText: "Locarno" }).locator(".mystatus").textContent());
+
+  // ——— v3: busca salva, agenda assinável, aviso de mudança ———
+  const w = await ctx.newPage();
+  w.on("pageerror", (e) => errors.push(e.message));
+  await w.goto("http://localhost:8889/?g=Documentário&br=1");
+  await w.waitForSelector("#tb td.name");
+  await w.click("#login");
+  await w.waitForSelector("#open-profile");
+  await w.waitForSelector("#save-search:not([hidden])");
+  await w.click("#save-search");
+  await w.waitForTimeout(150);
+  console.log("busca salva:", await w.evaluate(() => JSON.stringify(window.__db.saved_searches.map((x) => [x.label, x.params]))), "|", await w.textContent("#save-search"));
+  assert.equal(await w.evaluate(() => window.__db.saved_searches.length), 1);
+  await w.click("#account #nav-saved");
+  await w.waitForSelector("#searches:not([hidden])");
+  console.log("lista de buscas:", (await w.textContent("#searches-list")).replace(/\s+/g, " ").trim());
+  await w.click("#searches-list .ss-notify");
+  await w.waitForTimeout(100);
+  assert.equal(await w.evaluate(() => window.__db.saved_searches[0].notify), false);
+  await w.click("#mine-cal");
+  await w.waitForSelector("#agenda[open]");
+  const agUrl = await w.inputValue("#ag-url");
+  console.log("agenda:", agUrl, "|", await w.getAttribute("#ag-apple", "href"));
+  assert.match(agUrl, /\/agenda\/[a-f0-9]{32}\.ics$/);
+  await w.screenshot({ path: `${out}/v3-agenda.png` });
+  await w.click("#agenda button[value=close]");
+  await w.locator("#mine-bar").screenshot({ path: `${out}/v3-mine-bar.png` });
+  await w.click("#open-profile");
+  await w.uncheck("#pf-changes");
+  await w.waitForTimeout(100);
+  assert.equal(await w.evaluate(() => window.__db.profiles[0].change_alerts), false);
+  await w.screenshot({ path: `${out}/v3-profile.png` });
 
   console.log("erros JS:", errors);
   assert.equal(errors.length, 0);
