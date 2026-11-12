@@ -12,7 +12,7 @@ test("colunas novas: qualificação, estreia, restrições, temas", () => {
   assert.deepEqual(by("zinebi").qualifies, ["Oscar", "BAFTA", "EFA", "Goya"]);
   assert.deepEqual(by("clermont-ferrand").qualifies, ["Oscar", "BAFTA", "EFA"]);
   assert.equal(by("veneza").premiere, "Mundial");
-  assert.equal(by("go-short").restrictions, "Competição europeia: só produções europeias");
+  assert.equal(by("go-short").restrictions, "Competição europeia: apenas produções europeias");
   assert.deepEqual(by("filmambiente").themes, ["Meio ambiente"]);
   assert.equal(by("mostra-tiradentes").origin, "national");
   assert.equal(by("curta-canoa").origin, "regional-br");

@@ -117,7 +117,7 @@ const noPremiere = (f) => /n[aã]o exige|sem exig|n[aã]o requer/i.test(f.premie
 const acceptsBR = (f) => f.origin === "any" || f.origin === "regional-br" || (f.origin === "national" && f.scope === "BR");
 const ORIGIN_LABEL = {
   any: "Filmes de qualquer país",
-  national: "Só filmes do país do festival",
+  national: "Apenas filmes do país do festival",
   "regional-br": "Recorte regional (inclui o Brasil)",
   regional: "Recorte regional (não inclui o Brasil)",
 };
