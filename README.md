@@ -63,6 +63,12 @@ Os nomes das colunas podem estar em qualquer ordem e não importa se têm acento
 ### 1b. Supabase: acompanhamento dos salvos (opcional)
 Rode `supabase/migracao-2-acompanhamento.sql` no SQL Editor, do mesmo jeito que o `schema.sql`. Ela libera, na ficha de cada festival salvo, o seletor de situação: Quero inscrever · Inscrito · Selecionado · Não selecionado. Festivais marcados como Inscrito, Selecionado ou Não selecionado deixam de gerar lembrete de prazo. Sem essa migração, o site funciona normalmente, só sem o seletor.
 
+Rode também `supabase/migracao-3-avisos-agenda-buscas.sql`. Ela libera três recursos:
+- **Aviso de mudança nos salvos:** a função agendada `novidades` (todo dia às 8h30) compara a base com a do dia anterior e registra datas confirmadas, prazos alterados e festivais novos. Às quartas, envia um e-mail por pessoa com as mudanças nos festivais salvos (pode ser desligado no perfil).
+- **Agenda assinável:** em Meus salvos, "Assinar agenda" cria um link pessoal (`/agenda/<código>.ics`, função `agenda`) que o Google Agenda, a Apple e o Outlook atualizam sozinhos.
+- **Buscas salvas:** com filtros ativos, "Salvar esta busca" guarda os filtros; no e-mail de quarta entram os festivais novos que combinam com cada busca.
+Sem essa migração, o site funciona como antes, sem esses botões. A primeira execução da função `novidades` só tira a "foto" da base; os avisos começam a partir da segunda.
+
 ### 2. Resend: e-mails
 1. Crie uma conta em https://resend.com → **API Keys** → crie uma chave com permissão *Sending access* (`RESEND_API_KEY`).
 2. **Limite importante:** sem domínio próprio verificado, o Resend só envia de `onboarding@resend.dev` **para o e-mail da sua própria conta Resend**. Não é possível verificar um subdomínio `*.netlify.app`. Os lembretes para outras pessoas só começam a funcionar quando houver um domínio próprio. Depois de verificar o domínio em **Domains**, troque `RESEND_FROM` por, por exemplo, `Radar de Curtas <lembretes@seudominio.com.br>`.

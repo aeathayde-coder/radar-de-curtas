@@ -129,9 +129,14 @@
       <p>Os festivais que você salvou, com a situação de cada inscrição. Toque em um festival para marcar se vai inscrever, se já inscreveu ou se foi selecionado.</p>
       <div class="mine-acts">
         <button class="btn ghost" id="mine-prefs">Lembretes por e-mail</button>
+        <button class="btn" id="mine-cal">Assinar agenda</button>
         <button class="btn ghost" id="mine-ics">Exportar para o calendário</button>
         <button class="btn ghost" id="mine-xlsx">Baixar planilha</button>
         <button class="link-btn" id="mine-all">Ver todos os festivais</button>
+      </div>
+      <div class="searches" id="searches" hidden>
+        <span class="kicker">Suas buscas salvas</span>
+        <ul id="searches-list"></ul>
       </div>
     </div>
     <div class="calc" id="calc" hidden>
@@ -154,6 +159,7 @@
         <button data-sort="status" aria-pressed="false">Situação</button>
       </div>
       <span class="count" id="count" aria-live="polite"></span>
+      <button class="btn ghost save-search" id="save-search" hidden>☆ Salvar esta busca</button>
     </div>
 
     <div class="tablebox">
@@ -216,6 +222,10 @@
       <input type="checkbox" id="pf-optin">
       <span>Receber lembretes por e-mail dos prazos dos festivais salvos</span>
     </label>
+    <label class="check" id="pf-changes-row" hidden>
+      <input type="checkbox" id="pf-changes">
+      <span>Avisar quando um festival salvo mudar (data confirmada ou prazo alterado), num e-mail semanal com as novidades</span>
+    </label>
     <fieldset id="pf-days-set">
       <legend>Avisar quantos dias antes</legend>
       <div class="chips" id="pf-days"></div>
@@ -226,6 +236,22 @@
       <button type="button" class="link-btn" id="pf-logout">Sair</button>
       <button value="close" class="btn">Fechar</button>
     </div>
+  </form>
+</dialog>
+
+<dialog id="agenda" aria-labelledby="ag-title">
+  <form method="dialog" class="dlg">
+    <h2 id="ag-title">Assine sua agenda do Radar</h2>
+    <p>Este link é só seu. Coloque na sua agenda uma vez: os prazos dos festivais salvos aparecem lá e se atualizam sozinhos quando mudam no Radar, inclusive os que você salvar depois.</p>
+    <div class="ag-url"><input id="ag-url" readonly aria-label="Link da sua agenda"><button type="button" class="btn ghost" id="ag-copy">Copiar</button></div>
+    <ol class="ag-steps">
+      <li><b>Google Agenda</b> (no computador): Outras agendas → + → Do URL → cole o link.</li>
+      <li><b>Apple</b> (iPhone, iPad, Mac): <a id="ag-apple" href="#">abrir na agenda</a>.</li>
+      <li><b>Outlook:</b> Adicionar calendário → Assinar da Web → cole o link.</li>
+    </ol>
+    <p class="muted small">A agenda busca as mudanças sozinha, de algumas em algumas horas (o intervalo depende do aplicativo). Não compartilhe o link: quem tiver ele vê seus festivais salvos.</p>
+    <p class="muted small" id="ag-status" aria-live="polite"></p>
+    <div class="dlg-actions"><button value="close" class="btn">Fechar</button></div>
   </form>
 </dialog>
 

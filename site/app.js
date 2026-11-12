@@ -1,6 +1,7 @@
 // Radar de Festivais — front-end (sem build). Dados: site/dados/festivais.csv. Conta: Supabase + Google.
 import CONFIG from "./config.js";
 import { loadSheet } from "./sheet.js";
+import { norm, queryTerms, isFree, noPremiere, acceptsBR, wordsOf, describeParams } from "./filtros.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -42,6 +43,7 @@ const S = {
   quals: new Set(), themes: new Set(), free: false, noPremiere: false, acceptsBR: false, anyOrigin: false,
   sortKey: "deadline", sortDir: 1,
   sb: null, user: null, profile: null, saved: new Set(), track: new Map(), trackSupported: false,
+  v3: false, searches: [],
 };
 
 function status(f) {
@@ -73,6 +75,24 @@ function readURL() {
   S.acceptsBR = p.get("br") === "1";
   S.anyOrigin = p.get("mundo") === "1";
 }
+// Filtros da busca atual, sem a situação (usado para salvar a busca)
+function searchParams() {
+  const p = new URLSearchParams();
+  if (S.r !== "all") p.set("r", S.r);
+  if (S.q) p.set("q", S.q);
+  if (S.genres.size) p.set("g", [...S.genres].join(","));
+  if (S.country) p.set("pais", S.country);
+  if (S.dur) p.set("dur", S.dur);
+  if (!S.unknown) p.set("inc", "0");
+  if (S.quals.size) p.set("ql", [...S.quals].join(","));
+  if (S.themes.size) p.set("tema", [...S.themes].join(","));
+  if (S.free) p.set("gratis", "1");
+  if (S.noPremiere) p.set("semestreia", "1");
+  if (S.acceptsBR) p.set("br", "1");
+  if (S.anyOrigin) p.set("mundo", "1");
+  return p.toString();
+}
+
 function writeURL() {
   const p = new URLSearchParams();
   if (S.r !== "all") p.set("r", S.r);
@@ -95,28 +115,6 @@ function writeURL() {
 }
 
 // ——— filtros ———
-const norm = (s) => String(s || "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-
-// Palavras que as pessoas usam na busca → termos que existem na base (sem acento, minúsculas)
-const SYNONYMS = {
-  terror: ["fantastico"], horror: ["fantastico"], suspense: ["fantastico"], thriller: ["fantastico"],
-  "sci-fi": ["fantastico"], scifi: ["fantastico"], fantasia: ["fantastico"], genero: ["fantastico"],
-  doc: ["documentario"], docs: ["documentario"], documentarios: ["documentario"], "nao-ficcao": ["documentario"],
-  animado: ["animacao"], animacoes: ["animacao"], animation: ["animacao"],
-  clipe: ["videoclipe"], clip: ["videoclipe"],
-  experimentais: ["experimental"], videoarte: ["experimental"],
-  fiction: ["ficcao"], ficcoes: ["ficcao"],
-  gratis: ["gratuito", "gratis"], gratuita: ["gratuito"], free: ["gratuito"],
-  usa: ["eua"], germany: ["alemanha"], netherlands: ["holanda"], holland: ["holanda"],
-};
-// Cada termo da busca vira uma lista de alternativas aceitas
-const queryTerms = (q) => norm(q).split(/[^a-z0-9$€£-]+/).filter(Boolean).map((t) => [t, ...(SYNONYMS[t] || [])]);
-
-// "Gratuito": taxa ou observação dizem que a inscrição é grátis (inclui gratuito só para brasileiros)
-const isFree = (f) => /\b(gratuit|gr[aá]tis|isent|free)/i.test(`${f.fee || ""} ${f.notes || ""}`);
-const noPremiere = (f) => /n[aã]o exige|sem exig|n[aã]o requer/i.test(f.premiere || "");
-// Origem aceita: vale a nacionalidade do filme (país de produção), não o passaporte de quem dirige
-const acceptsBR = (f) => f.origin === "any" || f.origin === "regional-br" || (f.origin === "national" && f.scope === "BR");
 const ORIGIN_LABEL = {
   any: "Filmes de qualquer país",
   national: "Só filmes do país do festival",
@@ -148,7 +146,7 @@ function matches(f) {
   if (S.anyOrigin && (f.origin ? f.origin !== "any" : !S.unknown)) return false;
   if (S.q) {
     // Cada termo precisa casar com o começo de alguma palavra ("rio" acha Rio de Janeiro, não "documentário")
-    const words = (f._words ||= norm([f.name, f.local, f.country, f.region, f.fee, f.benefit, f.event, f.genres.join(" "), f.qualifies.join(" "), f.themes.join(" "), f.notes, f.restrictions, f.premiere].join(" ")).split(/[^a-z0-9$€£]+/).filter(Boolean));
+    const words = wordsOf(f);
     if (!queryTerms(S.q).every((alts) => alts.some((t) => words.some((w) => w.startsWith(t))))) return false;
   }
   return true;
@@ -242,6 +240,7 @@ function renderTable() {
   $("#h-all").innerHTML = mine ? `Meus <em>salvos</em>${S.saved.size ? ` (${S.saved.size})` : ""}` : "Todos os <em>festivais</em>";
   $("#k-all").textContent = mine ? "02 · seus festivais" : "02 · base completa";
   $("#mine-bar").hidden = !mine;
+  renderSearchTools(mine);
   renderCalc();
 }
 
@@ -446,11 +445,19 @@ function login() {
 }
 
 async function loadUserData() {
-  if (!S.user) { S.saved = new Set(); S.track = new Map(); S.profile = null; return; }
-  const [savedFull, prof] = await Promise.all([
+  if (!S.user) { S.saved = new Set(); S.track = new Map(); S.profile = null; S.searches = []; S.v3 = false; return; }
+  let [savedFull, prof] = await Promise.all([
     S.sb.from("saved_festivals").select("festival_id,status"),
-    S.sb.from("profiles").select("email,email_opt_in,reminder_days").eq("id", S.user.id).maybeSingle(),
+    S.sb.from("profiles").select("email,email_opt_in,reminder_days,change_alerts,calendar_token").eq("id", S.user.id).maybeSingle(),
   ]);
+  // Migração 3 (avisos, agenda assinável, buscas salvas): sem ela, o site segue como antes
+  S.v3 = !prof.error;
+  if (prof.error) prof = await S.sb.from("profiles").select("email,email_opt_in,reminder_days").eq("id", S.user.id).maybeSingle();
+  if (S.v3) {
+    const ss = await S.sb.from("saved_searches").select("id,label,params,notify").order("created_at");
+    S.searches = ss.error ? [] : ss.data;
+    if (ss.error) S.v3 = false;
+  }
   let saved = savedFull;
   S.trackSupported = !savedFull.error;
   // Se a coluna "status" ainda não existe no banco (migração 2 não rodada), funciona sem acompanhamento
@@ -499,6 +506,9 @@ function openProfile() {
   $("#pf-ics").hidden = !n;
   $("#pf-ics").onclick = () => downloadICS(S.all.filter((f) => S.saved.has(f.id)), "radar-de-festivais-salvos.ics");
   $("#pf-optin").checked = p.email_opt_in;
+  $("#pf-changes-row").hidden = !S.v3;
+  $("#pf-changes").checked = p.change_alerts !== false;
+  $("#pf-changes").disabled = !p.email_opt_in;
   $("#pf-days").innerHTML = REMINDER_OPTIONS.map(
     (d) => `<label class="chip"><input type="checkbox" value="${d}" ${p.reminder_days.includes(d) ? "checked" : ""}><span>${d} dia${d === 1 ? "" : "s"}</span></label>`,
   ).join("");
@@ -513,9 +523,12 @@ async function saveProfile() {
   const email_opt_in = $("#pf-optin").checked;
   $("#pf-days-set").disabled = !email_opt_in;
   $("#pf-hint").hidden = !email_opt_in;
-  const { error } = await S.sb.from("profiles").update({ email_opt_in, reminder_days }).eq("id", S.user.id);
+  const upd = { email_opt_in, reminder_days };
+  if (S.v3) upd.change_alerts = $("#pf-changes").checked;
+  $("#pf-changes").disabled = !email_opt_in;
+  const { error } = await S.sb.from("profiles").update(upd).eq("id", S.user.id);
   if (error) { console.error(error); $("#pf-status").textContent = "Não foi possível salvar."; return; }
-  S.profile = { ...(S.profile || {}), email_opt_in, reminder_days };
+  S.profile = { ...(S.profile || {}), ...upd };
   $("#pf-status").textContent = !email_opt_in
     ? "Lembretes desligados."
     : reminder_days.length ? "Preferências salvas." : "Nenhum dia marcado: você não vai receber lembretes.";
@@ -545,6 +558,69 @@ async function startAuth() {
     await loadUserData();
     renderAccount(); update();
   });
+}
+
+// ——— buscas salvas ———
+function renderSearchTools(mine) {
+  const btn = $("#save-search");
+  const qs = searchParams();
+  const existing = S.searches.find((x) => x.params === qs);
+  btn.hidden = !(S.user && S.v3 && qs && !mine);
+  btn.textContent = existing ? "★ Busca salva" : "☆ Salvar esta busca";
+  btn.disabled = !!existing;
+  const box = $("#searches");
+  box.hidden = !(mine && S.v3);
+  if (box.hidden) return;
+  $("#searches-list").innerHTML = S.searches.length
+    ? S.searches.map((x) => `<li data-id="${esc(x.id)}"><a href="/?${esc(x.params)}">${esc(x.label)}</a><label class="check sm"><input type="checkbox" class="ss-notify" ${x.notify ? "checked" : ""}><span>avisar por e-mail</span></label><button class="link-btn ss-del" aria-label="Apagar a busca ${esc(x.label)}">apagar</button></li>`).join("")
+    : `<li class="muted">Nenhuma busca salva. Filtre a lista e toque em "Salvar esta busca" para ser avisado quando entrar um festival que combine.</li>`;
+}
+
+async function saveSearch() {
+  if (!S.user) return login();
+  const params = searchParams();
+  if (!params) return;
+  const label = describeParams(params).slice(0, 300);
+  const { data, error } = await S.sb.from("saved_searches").insert({ user_id: S.user.id, label, params }).select("id,label,params,notify").single();
+  if (error) { console.error(error); return toast("Não foi possível salvar a busca. Tente de novo."); }
+  S.searches.push(data);
+  renderSearchTools(false);
+  toast(S.profile?.email_opt_in === false ? "Busca salva. Para receber avisos, ligue os e-mails no seu perfil." : "Busca salva. Avisamos por e-mail quando entrar um festival que combine com ela.");
+}
+
+async function searchAction(e) {
+  const li = e.target.closest("li[data-id]");
+  if (!li) return;
+  const id = li.dataset.id;
+  if (e.target.classList.contains("ss-del")) {
+    const { error } = await S.sb.from("saved_searches").delete().eq("id", id);
+    if (error) return toast("Não foi possível apagar.");
+    S.searches = S.searches.filter((x) => x.id !== id);
+    renderSearchTools(true);
+  } else if (e.target.classList.contains("ss-notify")) {
+    const notify = e.target.checked;
+    const { error } = await S.sb.from("saved_searches").update({ notify }).eq("id", id);
+    if (error) { e.target.checked = !notify; return toast("Não foi possível salvar."); }
+    const x = S.searches.find((y) => y.id === id); if (x) x.notify = notify;
+  }
+}
+
+// ——— agenda assinável ———
+async function openAgenda() {
+  if (!S.user) return login();
+  let token = S.profile?.calendar_token;
+  if (!token) {
+    const b = crypto.getRandomValues(new Uint8Array(16));
+    token = [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+    const { error } = await S.sb.from("profiles").update({ calendar_token: token }).eq("id", S.user.id);
+    if (error) { console.error(error); return toast("Não foi possível criar sua agenda agora. Tente de novo."); }
+    S.profile = { ...(S.profile || {}), calendar_token: token };
+  }
+  const https = `${location.origin}/agenda/${token}.ics`;
+  $("#ag-url").value = https;
+  $("#ag-apple").href = https.replace(/^https?:/, "webcal:");
+  $("#ag-status").textContent = "";
+  $("#agenda").showModal();
 }
 
 // ——— ficha do festival ———
@@ -700,6 +776,15 @@ function bind() {
     if (row) openDetail(row.dataset.open);
   };
   $("#mine-prefs").onclick = () => openProfile();
+  $("#mine-cal").onclick = openAgenda;
+  $("#save-search").onclick = saveSearch;
+  $("#searches-list").onclick = searchAction;
+  $("#searches-list").onchange = searchAction;
+  $("#ag-copy").onclick = async () => {
+    try { await navigator.clipboard.writeText($("#ag-url").value); $("#ag-status").textContent = "Link copiado."; }
+    catch { $("#ag-url").select(); $("#ag-status").textContent = "Selecione o link e copie."; }
+  };
+  $("#pf-changes").onchange = saveProfile;
   $("#calc-list").onchange = (e) => {
     const row = e.target.closest(".calc-row");
     if (!row) return;
