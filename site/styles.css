@@ -605,3 +605,15 @@ td.notes .flag.gen{border-style:dotted;white-space:normal;max-width:100%}
 dialog .toast{position:fixed;z-index:5}
 .dl dd a{color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
 .fp-dl dd a{color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+/* Busca avançada em grade fixa: duas colunas, não muda de lugar quando a lista de temas muda */
+.adv:not([hidden]){display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-areas:"gen qual" "theme checks" "fields checks" "clear checks";gap:20px 40px;align-items:start}
+.adv > fieldset:nth-of-type(1){grid-area:gen}
+.adv > fieldset:nth-of-type(2){grid-area:qual}
+#themes-set{grid-area:theme}
+.adv-fields{grid-area:fields;display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end}
+.adv .checks{grid-area:checks;gap:9px}
+.adv .checks .check{max-width:none}
+#adv-clear{grid-area:clear;justify-self:start}
+@media (max-width:720px){
+  .adv:not([hidden]){grid-template-columns:1fr;grid-template-areas:"gen" "qual" "theme" "fields" "checks" "clear"}
+}
