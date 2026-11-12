@@ -477,3 +477,6 @@ dialog#detail{max-width:min(660px,calc(100vw - 24px));max-height:calc(100dvh - 2
   .doc .doc-lede{font-size:20px}
   .tags-dl dd{font-size:17px}
 }
+td .loc .chk{display:block;margin-top:4px;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.02em}
+.doc hr.part{border:0;border-top:1px solid var(--fg);margin:56px 0 0}
+.doc .part-k{margin-top:14px}

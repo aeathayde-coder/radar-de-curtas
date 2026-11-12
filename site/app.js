@@ -225,19 +225,20 @@ function renderTable() {
           const tr = saved && S.trackSupported ? `<span class="mystatus">${esc(TRACK_LABEL[S.track.get(f.id)] || "Quero inscrever")}</span>` : "";
           return `<tr class="clickable${saved ? " is-saved" : ""}" data-open="${esc(f.id)}">
             <td class="save"><button class="star" data-id="${esc(f.id)}" aria-pressed="${saved}" aria-label="${saved ? "Remover dos salvos" : "Salvar"}: ${esc(f.name)}" title="${logged ? (saved ? "Remover dos salvos" : "Salvar e receber lembrete") : "Entre com Google para salvar"}">${saved ? "★" : "☆"}</button></td>
-            <td class="name">${name}<span class="loc">${esc(f.local || f.country || "")}${site}</span>${tr}<span class="more" aria-hidden="true">Ver detalhes →</span></td>
+            <td class="name">${name}<span class="loc">${esc(f.local || f.country || "")}${site}${f.checkedAt ? `<span class="chk">conferido em ${fmt(f.checkedAt).replace(/ \d{4}$/, "")}</span>` : ""}</span>${tr}<span class="more" aria-hidden="true">Ver detalhes →</span></td>
             <td class="mono dl-cell" data-label="Inscrições até">${f.deadline ? (f.dateStatus === "Confirmada" ? "" : "~") + fmt(f.deadline) : "a confirmar"}${sub}</td>
             <td class="st"><span class="pill p-${st.k}">${st.label}</span></td>
-            <td class="ev" data-label="Próxima edição">${esc(f.event || "—")}</td>
+            <td class="ev" data-label="Próxima edição">${esc(f.event || "a definir")}</td>
             <td class="notes">${reqCell(f)}</td>
           </tr>`;
         })
         .join("")
     : `<tr><td colspan="6" class="empty">${S.s === "mine" && !S.saved.size ? "Você ainda não salvou nenhum festival. Use a estrela ☆ ao lado do nome." : `Nenhum festival com esses filtros.${S.q ? " Tente outra palavra ou use a Busca avançada para filtrar por gênero, país e duração." : ""}`}</td></tr>`;
-  $("#count").textContent = `${rows.length} de ${S.all.length} festivais`;
+  // Sem filtro, não mostra contagem (o site não divulga o tamanho da base); com filtro, mostra só os resultados
+  $("#count").textContent = S.s !== "mine" && rows.length < S.all.length ? `${rows.length} resultado${rows.length === 1 ? "" : "s"}` : "";
   const mine = S.s === "mine";
   $("#h-all").innerHTML = mine ? `Meus <em>salvos</em>${S.saved.size ? ` (${S.saved.size})` : ""}` : "Todos os <em>festivais</em>";
-  $("#k-all").textContent = mine ? "02 — seus festivais" : "02 — base completa";
+  $("#k-all").textContent = mine ? "02 · seus festivais" : "02 · base completa";
   $("#mine-bar").hidden = !mine;
   renderCalc();
 }
