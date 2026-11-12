@@ -63,6 +63,7 @@ export function page(f, all, shell, today = new Date().toISOString().slice(0, 10
   add("Temas", esc(f.themes.join(", ")));
   add("Prêmios e benefícios", esc(f.benefit));
   add("Observações", esc(f.notes));
+  if (!f.rulesUrl) add("Regulamento", "Ainda sem link direto no Radar. Confira no site oficial: muitos festivais só publicam o regulamento quando as inscrições abrem.");
 
   const acts = [
     f.url ? `<a class="btn" href="${esc(f.url)}" target="_blank" rel="noopener">Página de inscrição ↗</a>` : "",
