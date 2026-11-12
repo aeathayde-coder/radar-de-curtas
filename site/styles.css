@@ -580,3 +580,9 @@ td.notes .flag.gen{border-style:dotted;white-space:normal;max-width:100%}
 .si-list{display:flex;flex-direction:column;border-top:1px dotted var(--muted);margin:10px 0}
 .si-row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px dotted var(--muted);font-size:16px;cursor:pointer}
 .si-row input{width:18px;height:18px;accent-color:#0e0e0e}
+/* desempenho e acessibilidade (PageSpeed): espaço reservado para os cards e áreas de toque maiores */
+.strip{min-height:262px}
+@media (max-width:700px){
+  td.name .ext,td.name .more,.link-btn,.sub-link,.cal-i{display:inline-block;min-height:24px;padding-block:4px}
+  td.name .more{margin-top:4px}
+}
