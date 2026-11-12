@@ -41,6 +41,8 @@ create table if not exists public.festival_notes (
   updated_at  timestamptz not null default now()
 );
 create index if not exists festival_notes_film on public.festival_notes (film_id, festival_id);
+-- Nome de quem escreveu, guardado na nota (continua aparecendo se a pessoa sair do projeto)
+alter table public.festival_notes add column if not exists author_name text check (author_name is null or char_length(author_name) <= 200);
 
 -- ——— Atividade da equipe (só o servidor lê) ———
 create table if not exists public.film_activity (
@@ -175,9 +177,14 @@ drop policy if exists "notas: atualizar" on public.festival_notes;
 create policy "notas: atualizar" on public.festival_notes for update to authenticated
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()) and public.film_role(film_id) is not null);
+-- A autora apaga as próprias notas; a dona do projeto apaga as notas compartilhadas de quem já saiu
 drop policy if exists "notas: apagar" on public.festival_notes;
 create policy "notas: apagar" on public.festival_notes for delete to authenticated
-  using (user_id = (select auth.uid()));
+  using (
+    user_id = (select auth.uid())
+    or (shared and public.film_role(film_id) = 'dono'
+        and not exists (select 1 from public.film_members m where m.film_id = festival_notes.film_id and m.user_id = festival_notes.user_id))
+  );
 revoke update on public.festival_notes from authenticated, anon;
 grant update (body, shared, film_id) on public.festival_notes to authenticated;
 
@@ -188,6 +195,19 @@ $$;
 drop trigger if exists festival_notes_touch on public.festival_notes;
 create trigger festival_notes_touch before update on public.festival_notes
   for each row execute function public.touch_note();
+
+create or replace function public.note_author()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  select left(coalesce(p.full_name, p.email), 200) into new.author_name from public.profiles p where p.id = new.user_id;
+  return new;
+end;
+$$;
+drop trigger if exists festival_notes_author on public.festival_notes;
+create trigger festival_notes_author before insert on public.festival_notes
+  for each row execute function public.note_author();
+update public.festival_notes n set author_name = left(coalesce(p.full_name, p.email), 200)
+from public.profiles p where p.id = n.user_id and n.author_name is null;
 
 -- As notas antigas (campo único) viram notas privadas da dona
 insert into public.festival_notes (film_id, festival_id, user_id, body, shared)

@@ -518,7 +518,7 @@ async function loadTeamData() {
   try {
     const [mem, notes, inv] = await Promise.all([
       S.sb.from("film_members").select("film_id,user_id,role,remind,changes,activity"),
-      S.sb.from("festival_notes").select("id,film_id,festival_id,user_id,body,shared,created_at").order("created_at"),
+      S.sb.from("festival_notes").select(NOTE_COLS).order("created_at").then((r) => (r.error && /author_name/.test(r.error.message || "") ? (NOTE_COLS = NOTE_COLS.replace(",author_name", ""), S.sb.from("festival_notes").select(NOTE_COLS).order("created_at")) : r)),
       S.sb.rpc("my_invites"),
     ]);
     if (mem.error || notes.error || inv.error) return;
@@ -954,16 +954,21 @@ async function moveRow(fid, to) {
 const ICO_LOCK = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
 const ICO_TEAM = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.8 0 4.9 2 5.5 5"/></svg>`;
 const ICO_INVITE = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/></svg>`;
-const NOTE_COLS = "id,film_id,festival_id,user_id,body,shared,created_at";
+let NOTE_COLS = "id,film_id,festival_id,user_id,body,shared,created_at,author_name";
 function notesHTML(f) {
   const gen = inGeneral();
   const items = notesFor(f.id).map((n) => {
     const mine = n.user_id === S.user.id;
-    const who = mine ? (gen ? "" : n.shared ? "sua nota, a equipe vê" : "sua nota, só você vê") : `nota de ${esc(personName(n.user_id))}`;
+    const team = S.teams?.get(S.film);
+    const gone = !mine && team && !team.some((p) => p.user_id === n.user_id);
+    const name = n.author_name || personName(n.user_id);
+    const who = mine ? (gen ? "" : n.shared ? "sua nota, a equipe vê" : "sua nota, só você vê") : gone ? `nota de ${esc(name)}, que saiu do projeto` : `nota de ${esc(name)}`;
     const pill = mine && !gen
       ? `<button type="button" class="vis${n.shared ? " on" : ""}" data-note="${esc(n.id)}" data-act="share" aria-pressed="${n.shared}" title="${n.shared ? "Toque para tornar privada" : "Toque para compartilhar com a equipe"}">${n.shared ? ICO_TEAM + "Compartilhada" : ICO_LOCK + "Privada"}</button>`
       : "";
-    const tools = mine ? `<button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="edit">editar</button><button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="del">apagar</button>` : "";
+    const tools = mine
+      ? `<button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="edit">editar</button><button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="del">apagar</button>`
+      : gone && roleOf(S.film) === "dono" ? `<button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="del">apagar</button>` : "";
     return `<li class="nt" data-id="${esc(n.id)}">${gen ? "" : n.shared ? ICO_TEAM : ICO_LOCK}<div class="nt-body"><p>${esc(n.body)}</p>${who ? `<small>${who}</small>` : ""}</div><div class="nt-acts">${pill}${tools}</div></li>`;
   }).join("");
   return `<span class="kicker">${gen ? "Notas (só você vê)" : "Notas"}</span>
