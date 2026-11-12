@@ -894,12 +894,13 @@ function renderSearchTools(mine) {
   const existing = S.searches.find((x) => x.params === qs);
   $("#ss-bar").hidden = !(S.sb && qs && !mine && (!S.user || S.v3));
   btn.textContent = !S.user ? "☆ Entrar para salvar esta busca" : existing ? "★ Busca salva" : "☆ Salvar esta busca";
-  btn.disabled = !!existing;
+  btn.setAttribute("aria-pressed", String(!!existing));
+  btn.title = existing ? "Toque para remover esta busca dos salvos" : "";
   const box = $("#searches");
   box.hidden = !(mine && S.v3);
   if (box.hidden) return;
   $("#searches-list").innerHTML = S.searches.length
-    ? S.searches.map((x) => `<li data-id="${esc(x.id)}"><a href="/?${esc(x.params)}">${esc(x.label)}</a><label class="check sm"><input type="checkbox" class="ss-notify" ${x.notify ? "checked" : ""}><span>avisar por e-mail</span></label><button class="link-btn ss-del" aria-label="Apagar a busca ${esc(x.label)}">apagar</button></li>`).join("")
+    ? S.searches.map((x) => `<li data-id="${esc(x.id)}"><a href="/?${esc(x.params)}">${esc(x.label)}</a><label class="check sm"><input type="checkbox" class="ss-notify" ${x.notify ? "checked" : ""}><span>avisar por e-mail</span></label><button class="link-btn ss-del" aria-label="Remover a busca ${esc(x.label)}">remover</button></li>`).join("")
     : `<li class="muted">Nenhuma busca salva. Filtre a lista e toque em "Salvar esta busca" para ser avisado quando entrar um festival que combine.</li>`;
 }
 
@@ -907,6 +908,15 @@ async function saveSearch() {
   if (!S.user) return login();
   const params = searchParams();
   if (!params) return;
+  // Já salva: o mesmo botão remove (como a estrela dos festivais)
+  const existing = S.searches.find((x) => x.params === params);
+  if (existing) {
+    const { error } = await S.sb.from("saved_searches").delete().eq("id", existing.id);
+    if (error) { console.error(error); return toast("Não foi possível remover. Tente de novo."); }
+    S.searches = S.searches.filter((x) => x.id !== existing.id);
+    renderSearchTools(false);
+    return toast("Busca removida dos salvos.");
+  }
   const label = describeParams(params).slice(0, 300);
   const { data, error } = await S.sb.from("saved_searches").insert({ user_id: S.user.id, label, params }).select("id,label,params,notify").single();
   if (error) { console.error(error); return toast("Não foi possível salvar a busca. Tente de novo."); }
@@ -924,6 +934,7 @@ async function searchAction(e) {
     if (error) return toast("Não foi possível apagar.");
     S.searches = S.searches.filter((x) => x.id !== id);
     renderSearchTools(true);
+    toast("Busca removida dos salvos.");
   } else if (e.target.classList.contains("ss-notify")) {
     const notify = e.target.checked;
     const { error } = await S.sb.from("saved_searches").update({ notify }).eq("id", id);

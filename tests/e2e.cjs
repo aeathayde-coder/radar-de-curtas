@@ -210,6 +210,13 @@ export function createClient() {
   await w.waitForTimeout(150);
   console.log("busca salva:", await w.evaluate(() => JSON.stringify(window.__db.saved_searches.map((x) => [x.label, x.params]))), "|", await w.textContent("#save-search"));
   assert.equal(await w.evaluate(() => window.__db.saved_searches.length), 1);
+  // tocar de novo em "★ Busca salva" remove; e salva outra vez para seguir o teste
+  await w.click("#save-search");
+  await w.waitForTimeout(150);
+  console.log("remover busca:", await w.textContent("#toast"), "|", await w.textContent("#save-search"));
+  assert.equal(await w.evaluate(() => window.__db.saved_searches.length), 0);
+  await w.click("#save-search");
+  await w.waitForTimeout(150);
   await w.click("#account #nav-saved");
   await w.waitForSelector("#searches:not([hidden])");
   console.log("lista de buscas:", (await w.textContent("#searches-list")).replace(/\s+/g, " ").trim());
