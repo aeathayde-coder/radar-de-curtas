@@ -426,6 +426,9 @@ function renderHeader() {
 let toastTimer;
 function toast(msg) {
   const t = $("#toast");
+  // Com uma janela aberta (ficha, salvar em…), o aviso vai para dentro dela; senão ficaria atrás do fundo escuro
+  const host = [...document.querySelectorAll("dialog[open]")].pop() || document.body;
+  if (t.parentNode !== host) host.appendChild(t);
   t.textContent = msg;
   t.hidden = false;
   clearTimeout(toastTimer);
@@ -1016,13 +1019,21 @@ async function openAgenda() {
 
 // ——— compartilhar: no celular abre o menu de compartilhamento; no computador copia o link ———
 const SHARE_ICO = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3.5"/><path d="m7.5 8 4.5-4.5L16.5 8"/><path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5"/></svg>`;
-async function shareFestival(f) {
+async function shareFestival(f, btn) {
   const url = `${location.origin}/festival/${encodeURIComponent(f.id)}.html`;
   const coarse = matchMedia("(pointer: coarse)").matches;
   if (coarse && navigator.share) {
     try { await navigator.share({ title: f.name, text: `${f.name} no Radar de Festivais`, url }); return; } catch (e) { if (e.name === "AbortError") return; }
   }
-  try { await navigator.clipboard.writeText(url); toast("Link copiado."); }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast("Link copiado. É só colar onde quiser.");
+    if (btn) {
+      const html = btn.innerHTML;
+      btn.textContent = "✓ Link copiado"; btn.classList.add("done");
+      setTimeout(() => { btn.innerHTML = html; btn.classList.remove("done"); }, 2500);
+    }
+  }
   catch { prompt("Copie o link:", url); }
 }
 
@@ -1073,7 +1084,7 @@ function openDetail(id) {
   }
   $("#dt-actions").innerHTML = acts.join("");
   $("#dt-save").onclick = () => saveClick(id);
-  $("#dt-share").onclick = () => shareFestival(f);
+  $("#dt-share").onclick = (e) => shareFestival(f, e.currentTarget);
   if ($("#dt-track")) $("#dt-track").onchange = (e) => setTrack(id, e.target.value);
   if ($("#dt-ics")) $("#dt-ics").onclick = () => downloadICS([f], `prazo-${f.id}.ics`);
   if (!$("#detail").open) $("#detail").showModal();

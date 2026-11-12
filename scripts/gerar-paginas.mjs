@@ -102,7 +102,7 @@ export function page(f, all, shell, today = new Date().toISOString().slice(0, 10
   b.onclick = function () {
     var url = location.href.split("#")[0].split("?")[0], t = document.title;
     if (matchMedia("(pointer: coarse)").matches && navigator.share) { navigator.share({ title: t, url: url }).catch(function () {}); return; }
-    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { b.textContent = "Link copiado"; setTimeout(function () { b.textContent = "Compartilhar"; }, 2500); }, function () { prompt("Copie o link:", url); });
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { var h = b.innerHTML; b.textContent = "✓ Link copiado"; b.classList.add("done"); setTimeout(function () { b.innerHTML = h; b.classList.remove("done"); }, 2500); }, function () { prompt("Copie o link:", url); });
   };
 })();
 (function () {
