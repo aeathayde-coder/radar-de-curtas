@@ -254,6 +254,23 @@ export function createClient() {
   console.log("relatório:", (await rep.textContent("h1")), "|", (await rep.textContent(".sum")).replace(/\s+/g, " "));
   await rep.screenshot({ path: `${out}/v4-relatorio.png`, fullPage: true });
   await rep.close();
+  // segundo filme: a estrela abre "Salvar em…"
+  await z.click("#film-new");
+  await z.fill("#fm-name", "Curta do baterista");
+  await z.selectOption("#fm-genre", "Documentário");
+  await z.click("#film-form button.btn:not(.ghost)");
+  await z.waitForTimeout(150);
+  await z.click("#mine-all");
+  await z.waitForTimeout(150);
+  await z.locator("#tb tr", { hasText: "Curta Cinema" }).first().locator(".star").click();
+  await z.waitForSelector("#savein[open]");
+  await z.screenshot({ path: `${out}/v4-salvar-em.png` });
+  await z.check("#si-list input >> nth=1");
+  await z.waitForTimeout(200);
+  const nrows = await z.evaluate(() => window.__db.saved_festivals.filter((r) => r.festival_id === "curta-cinema").length);
+  console.log("Curta Cinema em", nrows, "filmes");
+  assert.equal(nrows, 2);
+  await z.click("#savein button[value=close]");
 
   console.log("erros JS:", errors);
   assert.equal(errors.length, 0);

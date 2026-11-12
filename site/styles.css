@@ -577,3 +577,6 @@ td.notes .flag.gen{border-style:dotted;white-space:normal;max-width:100%}
 .mine-bar .mine-acts{justify-content:flex-start}
 .insc .ck input{accent-color:#0e0e0e;width:16px;height:16px}
 .insc-badge{display:block;margin-top:5px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.si-list{display:flex;flex-direction:column;border-top:1px dotted var(--muted);margin:10px 0}
+.si-row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px dotted var(--muted);font-size:16px;cursor:pointer}
+.si-row input{width:18px;height:18px;accent-color:#0e0e0e}

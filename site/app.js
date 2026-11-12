@@ -226,7 +226,7 @@ function renderTable() {
     ? rows
         .map((f) => {
           const st = f._st;
-          const saved = S.saved.has(f.id);
+          const saved = S.s !== "mine" && S.v4 ? S.rows.some((r) => r.festival_id === f.id) : S.saved.has(f.id);
           const name = `<button type="button" class="fname" data-open="${esc(f.id)}">${esc(f.name)}</button>`;
           const site = f.url ? ` · <a class="ext" href="${esc(f.url)}" target="_blank" rel="noopener" aria-label="Site oficial de ${esc(f.name)} (abre em nova aba)">site oficial ↗</a>` : "";
           const sub =
@@ -595,6 +595,38 @@ async function startAuth() {
   });
 }
 
+// ——— salvar em um ou mais filmes ———
+// Com um filme só, a estrela salva direto. Com dois ou mais, abre "Salvar em…" com um botão por filme.
+function saveClick(id) {
+  if (!S.sb) return toast("Login indisponível no momento.");
+  if (!S.user) return login();
+  if (S.v4 && S.films.length > 1) return openSaveIn(id);
+  return toggleSave(id);
+}
+function openSaveIn(id) {
+  const f = S.all.find((x) => x.id === id);
+  $("#si-title").textContent = f ? f.name : "";
+  $("#si-list").innerHTML = S.films.map((x) => {
+    const on = S.rows.some((r) => r.festival_id === id && r.film_id === x.id);
+    return `<label class="si-row"><input type="checkbox" data-film="${esc(x.id)}" ${on ? "checked" : ""}><span>${esc(x.title)}</span></label>`;
+  }).join("");
+  $("#savein").dataset.id = id;
+  $("#savein").showModal();
+}
+async function saveInFilm(id, filmId, on) {
+  const f = S.all.find((x) => x.id === id);
+  const { error } = on
+    ? await S.sb.from("saved_festivals").insert({ user_id: S.user.id, festival_id: id, festival_name: f?.name, film_id: filmId })
+    : await S.sb.from("saved_festivals").delete().eq("user_id", S.user.id).eq("festival_id", id).eq("film_id", filmId);
+  if (error) { console.error(error); toast("Não foi possível salvar. Tente de novo."); return false; }
+  if (on) S.rows.push({ festival_id: id, film_id: filmId, status: "quero", notes: null, checklist: null, award: null });
+  else S.rows = S.rows.filter((r) => !(r.festival_id === id && r.film_id === filmId));
+  applyFilm(); renderTable(); renderAccount(); refreshDetail(id);
+  const t = S.films.find((x) => x.id === filmId)?.title;
+  toast(on ? `Salvo em “${t}”.` : `Tirado de “${t}”.`);
+  return true;
+}
+
 // ——— planejamento por filme ———
 const FILM_KEY = "rdf-filme";
 const PREMIERE_LABEL = { inedito: "inédito", exibido_brasil: "já exibido no Brasil", exibido_exterior: "já exibido fora do Brasil" };
@@ -919,11 +951,12 @@ function openDetail(id) {
   if (S.v4 && S.saved.has(id)) bindInscricao(f);
 
   const saved = S.saved.has(id);
+  const inFilms = S.v4 ? S.films.filter((x) => S.rows.some((r) => r.festival_id === id && r.film_id === x.id)) : [];
   const acts = [];
   if (f.url) acts.push(`<a class="btn" href="${esc(f.url)}" target="_blank" rel="noopener">Página de inscrição ↗</a>`);
   if (f.rulesUrl) acts.push(`<a class="btn ghost" href="${esc(f.rulesUrl)}" target="_blank" rel="noopener">Regulamento ↗</a>`);
   acts.push(`<button class="btn ghost" id="dt-share">${SHARE_ICO} Compartilhar</button>`);
-  acts.push(`<button class="btn ghost" id="dt-save">${saved ? "★ Salvo" : "☆ Salvar"}</button>`);
+  acts.push(`<button class="btn ghost" id="dt-save">${S.v4 && S.films.length > 1 ? (inFilms.length ? `★ Em ${inFilms.length === 1 ? `“${esc(inFilms[0].title)}”` : `${inFilms.length} filmes`}` : "☆ Salvar em um filme") : saved ? "★ Salvo" : "☆ Salvar"}</button>`);
   if (saved && S.trackSupported) {
     const cur = S.track.get(id) || "quero";
     acts.push(`<label class="sr" for="dt-track">Situação</label><select id="dt-track">${TRACK.map(([v, l]) => `<option value="${v}" ${v === cur ? "selected" : ""}>${l}</option>`).join("")}</select>`);
@@ -933,7 +966,7 @@ function openDetail(id) {
     acts.push(`<button class="btn ghost" id="dt-ics">Baixar .ics</button>`);
   }
   $("#dt-actions").innerHTML = acts.join("");
-  $("#dt-save").onclick = () => toggleSave(id);
+  $("#dt-save").onclick = () => saveClick(id);
   $("#dt-share").onclick = () => shareFestival(f);
   if ($("#dt-track")) $("#dt-track").onchange = (e) => setTrack(id, e.target.value);
   if ($("#dt-ics")) $("#dt-ics").onclick = () => downloadICS([f], `prazo-${f.id}.ics`);
@@ -1039,7 +1072,7 @@ function bind() {
   }));
   $("#tb").onclick = (e) => {
     const b = e.target.closest(".star");
-    if (b) return toggleSave(b.dataset.id);
+    if (b) return saveClick(b.dataset.id);
     if (e.target.closest("a")) return; // link de inscrição abre direto
     const row = e.target.closest("tr[data-open]");
     if (row) openDetail(row.dataset.open);
@@ -1053,6 +1086,13 @@ function bind() {
     if (e.target.id === "film-edit") return openFilm(filmOf());
   };
   $("#film-form").onsubmit = saveFilm;
+  $("#si-list").onchange = async (e) => {
+    const c = e.target.closest("[data-film]"); if (!c) return;
+    c.disabled = true;
+    if (!(await saveInFilm($("#savein").dataset.id, c.dataset.film, c.checked))) c.checked = !c.checked;
+    c.disabled = false;
+  };
+  $("#si-new").onclick = () => { $("#savein").close(); openFilm(null); };
   $("#fm-del").onclick = deleteFilm;
   $$("[data-view]").forEach((b) => (b.onclick = () => { S.view = b.dataset.view; renderTable(); }));
   $("#calview").onclick = (e) => { const c = e.target.closest("[data-open]"); if (c) openDetail(c.dataset.open); };
