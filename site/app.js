@@ -47,7 +47,7 @@ function status(f) {
   const d = days(f.deadline);
   if (d < 0) return { k: "off", label: "encerrado", rank: 4 };
   if (f.dateStatus === "Confirmada") {
-    if (d <= 30) return { k: "hot", label: d === 0 ? "hoje" : `faltam ${d} dia${d === 1 ? "" : "s"}`, rank: 0 };
+    if (d <= 30) return { k: "hot", label: d === 0 ? "hoje" : d === 1 ? "falta 1 dia" : `faltam ${d} dias`, rank: 0 };
     return { k: "ok", label: `confirmado · ${d} d`, rank: 1 };
   }
   return { k: "est", label: `previsto · ~${d} d`, rank: 2 };
