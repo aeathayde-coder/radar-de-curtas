@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Radar de Festivais · Inscrições em festivais de curta-metragem</title>
+<title>Radar de Festivais · Prazos de inscrição para o seu curta-metragem</title>
 <meta name="description" content="Site brasileiro com prazos de inscrição e informações de festivais de curta-metragem nacionais e internacionais. Busque por gênero, país, duração e qualificação para o Oscar, salve e receba lembretes.">
 <meta property="og:url" content="https://www.radardefestivais.com.br/">
 <meta property="og:type" content="website">
@@ -62,6 +62,7 @@
     <button data-r="INT" aria-pressed="false">Mundo</button>
     <span class="qsep" aria-hidden="true"></span>
     <button data-s="open" aria-pressed="false">Inscrições abertas</button>
+    <button data-s="hot" aria-pressed="false">Fecham em 30 dias</button>
     <button id="q-free" aria-pressed="false">Gratuitos</button>
     <button data-s="est" aria-pressed="false">Previstos</button>
     <button data-s="mine" aria-pressed="false" id="s-mine" hidden>Salvos</button>
@@ -182,6 +183,7 @@
         <tbody id="tb"><tr><td colspan="6" class="muted">Carregando festivais…</td></tr></tbody>
       </table>
     </div>
+    <button class="btn more-btn" id="more" hidden>Mostrar mais</button>
 
     <div class="legend">
       <div><span class="pill p-hot">faltam N dias</span> Prazo confirmado que termina em até 30 dias.</div>
@@ -250,9 +252,10 @@
   <form method="dialog" class="dlg">
     <span class="kicker" id="si-h">Salvar em</span>
     <h2 id="si-title"></h2>
-    <p class="muted small">Em qual projeto este festival entra? Marque um ou mais. Cada projeto tem a própria situação, checklist e notas.</p>
+    <p class="muted small">Onde salvar? Marque uma ou mais opções. Cada lista tem a própria situação, checklist e notas.</p>
     <div class="si-list" id="si-list"></div>
     <button type="button" class="link-btn" id="si-new">+ novo projeto</button>
+    <div class="si-newbox" id="si-newbox" hidden><label class="fld">Nome do projeto<input id="si-name" maxlength="200" placeholder="ex.: título do seu curta"></label><button type="button" class="btn" id="si-create">Criar e salvar</button></div>
     <div class="dlg-actions"><button value="close" class="btn">Pronto</button></div>
   </form>
 </dialog>

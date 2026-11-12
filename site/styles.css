@@ -586,3 +586,11 @@ td.notes .flag.gen{border-style:dotted;white-space:normal;max-width:100%}
   td.name .ext,td.name .more,.link-btn,.sub-link,.cal-i{display:inline-block;min-height:24px;padding-block:4px}
   td.name .more{margin-top:4px}
 }
+
+/* lista longa e salvar em */
+.more-btn{display:block;margin:18px auto 0}
+.more-btn[hidden]{display:none}
+.si-row small{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.si-newbox{display:flex;gap:10px;align-items:flex-end;margin-top:12px;flex-wrap:wrap}
+.si-newbox .fld{flex:1;min-width:180px}
+.si-newbox[hidden]{display:none}

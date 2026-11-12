@@ -110,14 +110,15 @@ export function createClient() {
   await a.waitForSelector("#login");
   await a.click("#login");
   await a.waitForSelector("#open-profile");
+  // sem projeto: salva em "Para acompanhar"
   await a.click("#tb tr:nth-child(3) .star");
-  await a.waitForSelector("#savein[open] #si-name");
-  await a.fill("#si-name", "Meu projeto");
-  await a.click("#si-create");
+  await a.waitForSelector("#savein[open] #si-list input");
+  await a.screenshot({ path: `${out}/v4-primeiro-salvar.png` });
+  await a.check("#si-list input >> nth=0");
   await a.waitForTimeout(150);
+  await a.click("#savein button[value=close]");
   await a.click("#tb tr:nth-child(5) .star");
   await a.waitForSelector("#savein[open] #si-list input");
-  await a.screenshot({ path: `${out}/v4-salvar-em.png` });
   await a.check("#si-list input >> nth=0");
   await a.waitForTimeout(150);
   await a.click("#savein button[value=close]");
@@ -136,6 +137,7 @@ export function createClient() {
   await a.click("#s-mine");
   console.log("aba salvos:", await a.textContent("#count"), "|", await a.textContent("#s-mine"));
   await a.screenshot({ path: `${out}/logged.png`, fullPage: false });
+  await a.locator("#mine-bar").screenshot({ path: `${out}/v4-acompanhar.png` });
   // planilha dos salvos (.xlsx gerada no navegador)
   const [xl] = await Promise.all([a.waitForEvent("download"), a.click("#mine-xlsx")]);
   await xl.saveAs(`${out}/salvos.xlsx`);
@@ -180,8 +182,9 @@ export function createClient() {
   if (!(await v.isVisible("#detail[open]"))) { await v.locator("#tb tr", { hasText: "Locarno" }).locator("td.ev").click(); }
   if (!(await v.textContent("#dt-save")).includes("Salvo")) await v.click("#dt-save");
   await v.waitForSelector("#savein[open]");
-  if (await v.isVisible("#si-name")) { await v.fill("#si-name", "Meu projeto"); await v.click("#si-create"); }
-  else { await v.check("#si-list input >> nth=0"); await v.click("#savein button[value=close]"); }
+  await v.check("#si-list input >> nth=0");
+  await v.waitForTimeout(150);
+  await v.click("#savein button[value=close]");
   await v.waitForSelector("#dt-track");
   await v.selectOption("#dt-track", "inscrito");
   await v.waitForTimeout(200);
@@ -236,15 +239,17 @@ export function createClient() {
   await z.waitForSelector("#open-profile");
   // primeira estrela: pede o nome do projeto
   await z.locator("#tb tr", { hasText: "Curta Cinema" }).first().locator(".star").click();
-  await z.waitForSelector("#savein[open] #si-name");
-  await z.screenshot({ path: `${out}/v4-primeiro-projeto.png` });
+  await z.waitForSelector("#savein[open] #si-list input");
+  await z.click("#si-new");
   await z.fill("#si-name", "Meu projeto");
+  await z.screenshot({ path: `${out}/v4-novo-projeto.png` });
   await z.click("#si-create");
   await z.waitForTimeout(200);
+  await z.click("#savein button[value=close]");
   for (const n of ["Go Short", "Cannes: Competição"]) {
     await z.locator("#tb tr", { hasText: n }).first().locator(".star").click();
     await z.waitForSelector("#savein[open]");
-    await z.check("#si-list input >> nth=0");
+    await z.check("#si-list input >> nth=1");
     await z.waitForTimeout(150);
     await z.click("#savein button[value=close]");
   }
@@ -297,12 +302,18 @@ export function createClient() {
   await z.locator("#tb tr", { hasText: "Curta Cinema" }).first().locator(".star").click();
   await z.waitForSelector("#savein[open]");
   await z.screenshot({ path: `${out}/v4-salvar-em.png` });
-  await z.check("#si-list input >> nth=1");
+  await z.check("#si-list input >> nth=2");
   await z.waitForTimeout(200);
   const nrows = await z.evaluate(() => window.__db.saved_festivals.filter((r) => r.festival_id === "curta-cinema").length);
   console.log("Curta Cinema em", nrows, "filmes");
   assert.equal(nrows, 2);
   await z.click("#savein button[value=close]");
+
+  // filtro "Fecham em 30 dias" e "Mostrar mais"
+  await z.click("[data-s='hot']");
+  console.log("fecham em 30 dias:", await z.textContent("#count"), "| mostrar mais visível:", await z.isVisible("#more"));
+  await z.click("[data-s='hot']");
+  await z.evaluate(() => { window.__lim = true; });
 
   console.log("erros JS:", errors);
   assert.equal(errors.length, 0);

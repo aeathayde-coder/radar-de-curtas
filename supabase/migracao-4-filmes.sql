@@ -1,6 +1,7 @@
--- Radar de Festivais · migração 4: planejamento por filme, checklist, notas e prêmios
+-- Radar de Festivais · migração 4: planejamento por projeto, checklist, notas e prêmios
 -- Rodar uma vez em: Supabase → SQL Editor → New query → colar → Run (depois da migração 3).
--- Os festivais já salvos passam para um primeiro filme, "Meu projeto", que a pessoa pode renomear.
+-- Os festivais já salvos passam para a lista "Para acompanhar" (salvos sem projeto).
+-- Pode rodar de novo sem problema.
 
 create table if not exists public.films (
   id              uuid primary key default gen_random_uuid(),
@@ -13,7 +14,10 @@ create table if not exists public.films (
   country         text not null default 'Brasil' check (char_length(country) <= 60),
   created_at      timestamptz not null default now()
 );
+alter table public.films add column if not exists general boolean not null default false;
 create index if not exists films_user on public.films (user_id);
+-- No máximo uma lista "Para acompanhar" por pessoa
+create unique index if not exists films_one_general on public.films (user_id) where general;
 alter table public.films enable row level security;
 drop policy if exists "filmes: ler os próprios" on public.films;
 create policy "filmes: ler os próprios" on public.films for select to authenticated using ((select auth.uid()) = user_id);
@@ -32,12 +36,12 @@ alter table public.saved_festivals add column if not exists notes text check (no
 alter table public.saved_festivals add column if not exists checklist jsonb;
 alter table public.saved_festivals add column if not exists award text check (award is null or char_length(award) <= 200);
 
-insert into public.films (user_id, title)
-select distinct s.user_id, 'Meu projeto' from public.saved_festivals s
-where s.film_id is null and not exists (select 1 from public.films f where f.user_id = s.user_id);
+insert into public.films (user_id, title, general)
+select distinct s.user_id, 'Para acompanhar', true from public.saved_festivals s
+where s.film_id is null and not exists (select 1 from public.films f where f.user_id = s.user_id and f.general);
 
 update public.saved_festivals s
-set film_id = (select f.id from public.films f where f.user_id = s.user_id order by f.created_at limit 1)
+set film_id = (select f.id from public.films f where f.user_id = s.user_id and f.general limit 1)
 where s.film_id is null;
 
 alter table public.saved_festivals alter column film_id set not null;

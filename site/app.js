@@ -38,6 +38,7 @@ const fmt = (iso) => {
 
 // ——— estado ———
 const S = {
+  limit: 100,
   all: [],
   r: "all", s: "all", q: "", genres: new Set(), country: "", dur: null, unknown: true,
   quals: new Set(), themes: new Set(), free: false, noPremiere: false, acceptsBR: false, anyOrigin: false,
@@ -62,7 +63,7 @@ function status(f) {
 function readURL() {
   const p = new URLSearchParams(location.search);
   if (["BR", "INT"].includes(p.get("r"))) S.r = p.get("r");
-  if (["open", "est", "mine"].includes(p.get("s"))) S.s = p.get("s");
+  if (["open", "hot", "est", "mine"].includes(p.get("s"))) S.s = p.get("s");
   S.q = p.get("q") || "";
   (p.get("g") || "").split(",").filter(Boolean).forEach((g) => S.genres.add(g));
   S.country = p.get("pais") || "";
@@ -127,6 +128,7 @@ function matches(f) {
   if (S.r !== "all" && f.scope !== S.r) return false;
   const st = f._st;
   if (S.s === "open" && !(st.k === "ok" || st.k === "hot")) return false;
+  if (S.s === "hot" && st.k !== "hot") return false;
   if (S.s === "est" && st.k !== "est") return false;
   if (S.s === "mine" && !S.saved.has(f.id)) return false;
   if (S.country && f.country !== S.country) return false;
@@ -222,8 +224,13 @@ function renderTable() {
   if (!S.loaded) return;
   const rows = S.all.filter(matches).sort(sorter);
   const logged = !!S.user;
+  // Lista longa: mostra de PAGE em PAGE (o calendário e os salvos mostram tudo)
+  const shown = S.s === "mine" ? rows : rows.slice(0, S.limit);
+  const more = $("#more");
+  more.hidden = shown.length >= rows.length;
+  more.textContent = `Mostrar mais ${Math.min(PAGE, rows.length - shown.length)} festivais`;
   $("#tb").innerHTML = rows.length
-    ? rows
+    ? shown
         .map((f) => {
           const st = f._st;
           const saved = S.s !== "mine" && S.v4 ? S.rows.some((r) => r.festival_id === f.id) : S.saved.has(f.id);
@@ -375,7 +382,7 @@ function syncControls() {
   );
 }
 
-function update() { syncControls(); syncAdvCount(); renderTable(); writeURL(); }
+function update() { S.limit = PAGE; syncControls(); syncAdvCount(); renderTable(); writeURL(); }
 
 function buildAdvanced() {
   // Ordem fixa para os principais; qualquer gênero novo escrito na planilha entra depois, em ordem alfabética
@@ -474,11 +481,11 @@ async function loadUserData() {
   // Migração 4 (planejamento por filme): os salvos passam a pertencer a um filme
   S.v4 = false;
   if (S.v3) {
-    const fl = await S.sb.from("films").select("id,title,duration_min,genre,finished_on,premiere_status,country").order("created_at");
+    const fl = await S.sb.from("films").select(FILM_COLS).order("created_at");
     if (!fl.error) {
       const rows = await S.sb.from("saved_festivals").select("festival_id,film_id,status,notes,checklist,award");
       if (!rows.error) {
-        S.v4 = true; S.films = fl.data || []; S.rows = rows.data || [];
+        S.v4 = true; S.films = sortFilms(fl.data || []); S.rows = rows.data || [];
         S.trackSupported = true; S.profile = prof.data || null;
         applyFilm();
         return;
@@ -602,7 +609,7 @@ function saveClick(id) {
   if (!S.user) return login();
   if (S.v4) {
     const inFilms = S.rows.filter((r) => r.festival_id === id);
-    if (S.films.length === 1 && inFilms.length === 1) return saveInFilm(id, inFilms[0].film_id, false);
+    if (S.films.length <= 1 && inFilms.length === 1) return saveInFilm(id, inFilms[0].film_id, false);
     return openSaveIn(id);
   }
   return toggleSave(id);
@@ -610,28 +617,34 @@ function saveClick(id) {
 function openSaveIn(id) {
   const f = S.all.find((x) => x.id === id);
   $("#si-title").textContent = f ? f.name : "";
-  if (!S.films.length) {
-    $("#si-list").innerHTML = `<label class="fld">Nome do seu projeto<input id="si-name" maxlength="200" placeholder="ex.: título do seu curta"></label><button type="button" class="btn" id="si-create">Criar projeto e salvar</button>`;
-    $("#si-new").hidden = true;
-    $("#si-create").onclick = async () => {
-      const title = ($("#si-name").value.trim() || "Meu projeto").slice(0, 200);
-      const { data, error } = await S.sb.from("films").insert({ user_id: S.user.id, title }).select("id,title,duration_min,genre,finished_on,premiere_status,country").single();
-      if (error) { console.error(error); return toast("Não foi possível criar o projeto."); }
-      S.films.push(data); S.film = data.id;
-      try { localStorage.setItem(FILM_KEY, data.id); } catch {}
-      await saveInFilm(id, data.id, true);
-      $("#savein").close();
-    };
-    $("#savein").dataset.id = id;
-    return $("#savein").showModal();
-  }
-  $("#si-new").hidden = false;
-  $("#si-list").innerHTML = S.films.map((x) => {
+  // "Para acompanhar" aparece sempre, mesmo antes de existir: é criada no primeiro uso
+  const gen = generalOf() || { id: "__geral", title: GENERAL_TITLE, general: true };
+  const list = [gen, ...S.films.filter((x) => !x.general)];
+  $("#si-list").innerHTML = list.map((x) => {
     const on = S.rows.some((r) => r.festival_id === id && r.film_id === x.id);
-    return `<label class="si-row"><input type="checkbox" data-film="${esc(x.id)}" ${on ? "checked" : ""}><span>${esc(x.title)}</span></label>`;
+    const hint = x.general ? `<small>sem projeto, apenas para acompanhar os prazos</small>` : "";
+    return `<label class="si-row"><input type="checkbox" data-film="${esc(x.id)}" ${on ? "checked" : ""}><span>${esc(x.title)}${hint}</span></label>`;
   }).join("");
+  $("#si-newbox").hidden = true;
+  $("#si-new").hidden = false;
+  $("#si-name").value = "";
   $("#savein").dataset.id = id;
   $("#savein").showModal();
+}
+async function createProjectAndSave() {
+  const id = $("#savein").dataset.id;
+  const title = ($("#si-name").value.trim() || "Meu projeto").slice(0, 200);
+  const { data, error } = await S.sb.from("films").insert({ user_id: S.user.id, title }).select(FILM_COLS).single();
+  if (error) { console.error(error); return toast("Não foi possível criar o projeto."); }
+  S.films = sortFilms([...S.films, data]);
+  if (await saveInFilm(id, data.id, true)) openSaveIn(id);
+}
+async function ensureGeneral() {
+  const g = generalOf(); if (g) return g.id;
+  const { data, error } = await S.sb.from("films").insert({ user_id: S.user.id, title: GENERAL_TITLE, general: true }).select(FILM_COLS).single();
+  if (error) { console.error(error); toast("Não foi possível salvar. Tente de novo."); return null; }
+  S.films = sortFilms([...S.films, data]);
+  return data.id;
 }
 async function saveInFilm(id, filmId, on) {
   const f = S.all.find((x) => x.id === id);
@@ -649,6 +662,11 @@ async function saveInFilm(id, filmId, on) {
 
 // ——— planejamento por filme ———
 const FILM_KEY = "rdf-filme";
+const FILM_COLS = "id,title,duration_min,genre,finished_on,premiere_status,country,general";
+const GENERAL_TITLE = "Para acompanhar";
+const PAGE = 100;
+const generalOf = () => S.films.find((x) => x.general) || null;
+const sortFilms = (l) => [...l.filter((x) => x.general), ...l.filter((x) => !x.general)];
 const PREMIERE_LABEL = { inedito: "inédito", exibido_brasil: "já exibido no Brasil", exibido_exterior: "já exibido fora do Brasil" };
 const filmOf = () => S.films.find((x) => x.id === S.film) || null;
 const rowOf = (fid) => S.rows.find((r) => r.festival_id === fid && (!S.v4 || r.film_id === S.film));
@@ -669,9 +687,10 @@ function selectFilm(id) {
 }
 async function ensureFilm() {
   if (S.film) return true;
-  const { data, error } = await S.sb.from("films").insert({ user_id: S.user.id, title: "Meu projeto" }).select("id,title,duration_min,genre,finished_on,premiere_status,country").single();
-  if (error) { console.error(error); return false; }
-  S.films.push(data); S.film = data.id;
+  const id = await ensureGeneral();
+  if (!id) return false;
+  S.film = id;
+  const data = { id };
   try { localStorage.setItem(FILM_KEY, data.id); } catch {}
   return true;
 }
@@ -681,16 +700,19 @@ function renderFilms(mine) {
   box.hidden = !(mine && S.v4);
   if (box.hidden) return;
   const f = filmOf();
-  $("#mine-help").innerHTML = f
+  $("#mine-help").innerHTML = f?.general
+    ? "Festivais que você salvou para acompanhar, sem projeto. Toque em um festival para marcar a situação, usar o checklist e escrever notas. Quando tiver um filme para inscrever, crie um projeto e salve nele os festivais que fizerem sentido."
+    : f
     ? `Os festivais de <b>${esc(f.title)}</b>. Toque em um festival para marcar a situação da inscrição, usar o checklist de materiais e escrever notas. Para incluir festivais neste projeto, use a estrela ☆ na lista completa e escolha o projeto.`
     : "Salve festivais com a estrela ☆ na lista completa. Na primeira vez, você dá um nome ao seu projeto.";
   const info = f ? [f.duration_min ? `${f.duration_min} min` : "", f.genre || "", PREMIERE_LABEL[f.premiere_status] || "", f.country || ""].filter(Boolean).join(" · ") : "";
-  box.innerHTML = `<span class="kicker">Seus projetos</span>
+  box.innerHTML = `<span class="kicker">Suas listas</span>
     <div class="film-chips">${S.films.map((x) => `<button class="fchip" data-film="${esc(x.id)}" aria-pressed="${x.id === S.film}">${esc(x.title)}</button>`).join("")}<button class="fchip add" id="film-new">+ novo projeto</button></div>
-    ${f ? `<p class="film-info">${esc(info)}${!f.duration_min || !f.genre ? `${info ? " · " : ""}<span class="muted">preencha a ficha para ver quais festivais estão dentro dos requisitos</span>` : ""} <button class="link-btn" id="film-edit">editar ficha</button></p>` : ""}`;
+    ${f && !f.general ? `<p class="film-info">${esc(info)}${!f.duration_min || !f.genre ? `${info ? " · " : ""}<span class="muted">preencha a ficha para ver quais festivais estão dentro dos requisitos</span>` : ""} <button class="link-btn" id="film-edit">editar ficha</button></p>` : ""}`;
 }
 
 function openFilm(film) {
+  if (film?.general) return;
   const f = film || { title: "", duration_min: "", genre: "", finished_on: "", premiere_status: "inedito", country: "Brasil" };
   $("#fm-title").textContent = film ? "Ficha do projeto" : "Novo projeto";
   $("#fm-name").value = f.title || "";
@@ -715,7 +737,7 @@ async function saveFilm(e) {
     premiere_status: $("#fm-prem").value,
     country: $("#fm-country").value.trim().slice(0, 60) || "Brasil",
   };
-  const cols = "id,title,duration_min,genre,finished_on,premiere_status,country";
+  const cols = FILM_COLS;
   const res = id
     ? await S.sb.from("films").update(body).eq("id", id).select(cols).single()
     : await S.sb.from("films").insert({ user_id: S.user.id, ...body }).select(cols).single();
@@ -852,6 +874,7 @@ function renderCalendar(rows) {
   $("#calview").hidden = !cal;
   $$("[data-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === S.view)));
   if (!cal) return;
+  $("#more").hidden = true;
   const now = new Date(); const months = [];
   for (let i = 0; i < 12; i++) { const d = new Date(now.getFullYear(), now.getMonth() + i, 1); months.push({ y: d.getFullYear(), m: d.getMonth(), items: [] }); }
   for (const f of rows) {
@@ -1109,10 +1132,15 @@ function bind() {
   $("#si-list").onchange = async (e) => {
     const c = e.target.closest("[data-film]"); if (!c) return;
     c.disabled = true;
-    if (!(await saveInFilm($("#savein").dataset.id, c.dataset.film, c.checked))) c.checked = !c.checked;
+    let fid = c.dataset.film;
+    if (fid === "__geral") { fid = await ensureGeneral(); if (fid) c.dataset.film = fid; }
+    if (!fid || !(await saveInFilm($("#savein").dataset.id, fid, c.checked))) c.checked = !c.checked;
     c.disabled = false;
   };
-  $("#si-new").onclick = () => { $("#savein").close(); openFilm(null); };
+  $("#si-new").onclick = () => { $("#si-new").hidden = true; $("#si-newbox").hidden = false; $("#si-name").focus(); };
+  $("#si-create").onclick = createProjectAndSave;
+  $("#si-name").onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); createProjectAndSave(); } };
+  $("#more").onclick = () => { S.limit += PAGE; renderTable(); };
   $("#fm-del").onclick = deleteFilm;
   $$("[data-view]").forEach((b) => (b.onclick = () => { S.view = b.dataset.view; renderTable(); }));
   $("#calview").onclick = (e) => { const c = e.target.closest("[data-open]"); if (c) openDetail(c.dataset.open); };
