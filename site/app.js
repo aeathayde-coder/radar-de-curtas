@@ -1061,7 +1061,7 @@ function openDetail(id) {
   add("Inscrição", esc(f.fee));
   add("Prêmios e benefícios", esc(f.benefit));
   add("Observações", esc(f.notes));
-  if (!f.rulesUrl) add("Regulamento", "Ainda sem link direto no Radar. Confira no site oficial: muitos festivais só publicam o regulamento quando as inscrições abrem.");
+  if (!f.rulesUrl) add("Regulamento", "Confira no site oficial.");
   add("Última verificação", f.checkedAt ? fmt(f.checkedAt) : "");
   $("#dt-where").textContent = f.scope === "BR" ? "Brasil" : f.country || "";
   $("#dt-title").textContent = f.name;
