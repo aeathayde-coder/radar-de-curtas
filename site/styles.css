@@ -480,3 +480,34 @@ dialog#detail{max-width:min(660px,calc(100vw - 24px));max-height:calc(100dvh - 2
 td .loc .chk{display:block;margin-top:4px;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.02em}
 .doc hr.part{border:0;border-top:1px solid var(--fg);margin:56px 0 0}
 .doc .part-k{margin-top:14px}
+/* páginas por festival (geradas por scripts/gerar-paginas.mjs) */
+.fp{max-width:880px}
+.fp-crumb{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.fp-crumb a{color:inherit}
+.fp h1{font-size:clamp(36px,6vw,54px);line-height:1.02;margin:14px 0 10px}
+.fp-where{color:var(--muted);font-size:17px;margin:0 0 26px}
+.fp-facts{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--fg);border-bottom:1px dotted var(--muted);margin-bottom:26px}
+.fp-facts div{padding:16px 14px 18px 0}
+.fp-facts .k{display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.fp-facts .v{font-size:19px}
+.fp-tags{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px}
+.fp-tg{font-family:var(--f-mono);font-size:12.5px;padding:5px 10px;border:1px solid var(--muted)}
+.fp-tg.q{border-color:var(--fg)}
+.fp-tg.warn{border-color:#d33;color:#c22}
+.fp-dl{display:grid;grid-template-columns:200px 1fr;margin:0 0 30px;border-top:1px dotted var(--muted)}
+.fp-dl dt,.fp-dl dd{padding:14px 0;border-bottom:1px dotted var(--muted);margin:0}
+.fp-dl dt{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding-top:17px}
+.fp-acts{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px}
+.fp-chk{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin:0 0 44px}
+.fp h2{font-size:30px;margin:0 0 6px}
+.fp-rel{list-style:none;padding:0;margin:0 0 30px;border-top:1px solid var(--fg)}
+.fp-rel li{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px dotted var(--muted);font-size:16px}
+.fp-rel span{font-family:var(--f-mono);font-size:13px;color:var(--muted);white-space:nowrap}
+@media (max-width:700px){
+  .fp-facts{grid-template-columns:1fr 1fr}
+  .fp-dl{grid-template-columns:1fr}
+  .fp-dl dt{border-bottom:0;padding-bottom:0}
+}
+.doc p.fp-chk{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin:0 0 44px}
+.doc p.fp-where{color:var(--muted);font-size:17px;margin:0 0 26px}
+.doc ul.fp-rel{list-style:none;padding:0;gap:0}

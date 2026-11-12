@@ -7,6 +7,8 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
+// lido antes de a URL ser reescrita pelos filtros
+const OPEN_ID = new URLSearchParams(location.search).get("f");
 const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 const GENRE_ORDER = ["Ficção", "Documentário", "Animação", "Experimental", "Videoclipe"];
 // Fantástico entra na Ficção: não vira botão de filtro, mas continua encontrável pela busca
@@ -570,6 +572,7 @@ function openDetail(id) {
   add("Prêmios e benefícios", esc(f.benefit));
   add("Observações", esc(f.notes));
   add("Última verificação", f.checkedAt ? fmt(f.checkedAt) : "");
+  add("Link para compartilhar", `<a href="/festival/${encodeURIComponent(f.id)}.html">radardefestivais.com.br/festival/${esc(f.id)}</a>`);
   $("#dt-where").textContent = f.scope === "BR" ? "Brasil" : f.country || "";
   $("#dt-title").textContent = f.name;
   $("#dt-body").innerHTML = `<dl class="dl">${rows.join("")}</dl>`;
@@ -743,6 +746,9 @@ async function init() {
   renderStrip();
   buildAdvanced();
   update();
+  // vindo de uma página de festival (/?f=id): abre a ficha
+  const fid = OPEN_ID;
+  if (fid && S.all.some((x) => x.id === fid)) openDetail(fid);
 }
 
 // banner do Curió: só aparece quando houver link

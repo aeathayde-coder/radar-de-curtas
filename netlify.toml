@@ -1,4 +1,6 @@
 [build]
+  # gera uma página por festival e o sitemap a partir da base, a cada publicação
+  command = "node scripts/gerar-paginas.mjs"
   publish = "site"
   functions = "netlify/functions"
 
