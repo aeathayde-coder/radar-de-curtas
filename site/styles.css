@@ -597,3 +597,7 @@ td.notes .flag.gen{border-style:dotted;white-space:normal;max-width:100%}
 .move{display:grid;gap:6px;margin-top:18px;padding-top:14px;border-top:1px dotted var(--muted);font-size:14px}
 .move select{max-width:320px}
 .move small{color:var(--muted);font-size:13px}
+.move-top{margin:0 0 18px;padding:14px 16px;border:1px dashed var(--fg);border-radius:10px;background:var(--surface)}
+.move-top .kicker{margin:0}
+.si-newbox input,.move select{flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:15px;background:#fff;color:var(--fg)}
+.move-top label{font-size:14.5px}

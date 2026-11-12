@@ -239,7 +239,7 @@ function renderTable() {
           const sub =
             st.k === "off" ? `<span class="sub">aguardando próximo ciclo</span>`
             : f.deadline && f.dateStatus !== "Confirmada" ? `<span class="sub">aguardando confirmação</span>` : "";
-          const tr = saved && S.trackSupported ? `<span class="mystatus">${esc(TRACK_LABEL[S.track.get(f.id)] || "Quero inscrever")}</span>` : "";
+          const tr = saved && S.trackSupported && !inGeneral() ? `<span class="mystatus">${esc(TRACK_LABEL[S.track.get(f.id)] || "Quero inscrever")}</span>` : "";
           return `<tr class="clickable${saved ? " is-saved" : ""}" data-open="${esc(f.id)}">
             <td class="save"><button class="star" data-id="${esc(f.id)}" aria-pressed="${saved}" aria-label="${saved ? "Remover dos salvos" : "Salvar"}: ${esc(f.name)}" title="${logged ? (saved ? "Remover dos salvos" : "Salvar e receber lembrete") : "Entre com Google para salvar"}">${saved ? "★" : "☆"}</button></td>
             <td class="name">${name}<span class="loc">${esc(f.local || f.country || "")}${site}${f.checkedAt ? `<span class="chk">conferido em ${fmt(f.checkedAt).replace(/ \d{4}$/, "")}</span>` : ""}</span>${tr}${S.s === "mine" ? fitHTML(f) + inscBadge(f) : ""}<span class="more" aria-hidden="true">Ver detalhes →</span></td>
@@ -259,7 +259,7 @@ function renderTable() {
   $("#mine-bar").hidden = !mine;
   renderSearchTools(mine);
   renderFilms(mine);
-  $("#mine-report").hidden = !(mine && S.saved.size);
+  $("#mine-report").hidden = !(mine && S.saved.size) || inGeneral();
   renderCalendar(rows);
   renderCalc();
 }
@@ -289,7 +289,7 @@ function feeFor(f) {
 const toBRL = (v, c) => (v == null ? null : c === "BRL" ? v : FX && FX.rates[c] ? v / FX.rates[c] : null);
 function renderCalc() {
   const box = $("#calc");
-  const on = S.s === "mine" && S.saved.size > 0;
+  const on = S.s === "mine" && S.saved.size > 0 && !inGeneral();
   box.hidden = !on;
   if (!on) return;
   if (!FX && !fxLoading) fxLoading = loadFX().then(() => { fxLoading = null; renderCalc(); });
@@ -669,6 +669,8 @@ const FILM_COLS = "id,title,duration_min,genre,finished_on,premiere_status,count
 const GENERAL_TITLE = "Para acompanhar";
 const PAGE = 100;
 const generalOf = () => S.films.find((x) => x.general) || null;
+// "Para acompanhar" é para ficar de olho: só notas e prazos. Situação, checklist e relatório são de projeto.
+const inGeneral = () => !!(S.v4 && filmOf()?.general);
 const sortFilms = (l) => [...l.filter((x) => x.general), ...l.filter((x) => !x.general)];
 const PREMIERE_LABEL = { inedito: "inédito", exibido_brasil: "já exibido no Brasil", exibido_exterior: "já exibido fora do Brasil" };
 const filmOf = () => S.films.find((x) => x.id === S.film) || null;
@@ -704,7 +706,7 @@ function renderFilms(mine) {
   if (box.hidden) return;
   const f = filmOf();
   $("#mine-help").innerHTML = f?.general
-    ? "Festivais que você salvou para acompanhar, sem projeto. Toque em um festival para marcar a situação, usar o checklist e escrever notas. Quando tiver um filme para inscrever, crie um projeto e salve nele os festivais que fizerem sentido."
+    ? "Festivais que você salvou para acompanhar, sem projeto. Você recebe os lembretes de prazo e pode escrever notas. Quando for inscrever um filme, abra o festival e mova para um projeto: lá entram o checklist, a situação da inscrição e os requisitos do filme."
     : f
     ? `Os festivais de <b>${esc(f.title)}</b>. Toque em um festival para marcar a situação da inscrição, usar o checklist de materiais e escrever notas. Para incluir festivais neste projeto, use a estrela ☆ na lista completa e escolha o projeto.`
     : "Salve festivais com a estrela ☆ na lista completa. Na primeira vez, você dá um nome ao seu projeto.";
@@ -779,6 +781,7 @@ function fitOf(f, film) {
 function inscBadge(f) {
   if (!S.v4) return "";
   const r = rowOf(f.id); if (!r) return "";
+  if (inGeneral()) return r.notes ? `<span class="insc-badge">com notas</span>` : "";
   const list = checklistOf(r); const done = list.filter((x) => x.d).length;
   return `<span class="insc-badge">checklist ${done}/${list.length}${r.notes ? " · com notas" : ""}${r.award ? " · prêmio" : ""}</span>`;
 }
@@ -797,10 +800,24 @@ const CHECK_DEFAULT = ["Link de visionamento com senha", "Legendas em inglês", 
 const checklistOf = (r) => (Array.isArray(r?.checklist) ? r.checklist : CHECK_DEFAULT.map((t) => ({ t, d: false })));
 function inscricaoHTML(f) {
   const r = rowOf(f.id) || {};
+  if (inGeneral()) {
+    const projects = S.films.filter((x) => !x.general);
+    return `<section class="insc">
+      <div class="move move-top"><span class="kicker">Vai inscrever um filme?</span>
+        ${projects.length
+          ? `<label for="in-move">Mova este festival para o projeto e ganhe checklist de materiais, situação da inscrição e requisitos do filme.</label><select id="in-move"><option value="">escolha o projeto</option>${projects.map((x) => `<option value="${esc(x.id)}">${esc(x.title)}</option>`).join("")}</select>`
+          : `<label for="in-newproj">Crie o projeto e mova este festival para ele: ganha checklist de materiais, situação da inscrição e requisitos do filme.</label><div class="si-newbox"><input id="in-newproj" maxlength="200" placeholder="nome do projeto, ex.: título do seu curta"><button type="button" class="btn" id="in-newproj-go">Criar e mover</button></div>`}
+        <small>As notas vão junto.</small></div>
+      <label class="kicker" for="in-notes">Notas (só você vê)</label>
+      <textarea id="in-notes" maxlength="4000" rows="4" placeholder="Por que vale acompanhar, contatos, categorias que podem abrir…">${esc(r.notes || "")}</textarea>
+      <p class="muted small" id="in-status" aria-live="polite"></p>
+    </section>`;
+  }
   const list = checklistOf(r);
   const done = list.filter((x) => x.d).length;
   const conflicts = r.status === "selecionado" ? premiereConflicts(f.id) : [];
   return `<section class="insc">
+    ${S.films.length > 1 ? `<div class="move move-top"><label for="in-move">Mover este festival para outra lista</label><select id="in-move"><option value="">escolha a lista</option>${S.films.filter((x) => x.id !== S.film).map((x) => `<option value="${esc(x.id)}">${esc(x.title)}</option>`).join("")}</select><small>Sai de “${esc(filmOf()?.title || "")}” e leva a situação, o checklist e as notas.</small></div>` : ""}
     ${filmOf() && S.films.length > 1 ? `<span class="kicker">Inscrição de “${esc(filmOf().title)}”</span>` : ""}
     ${conflicts.length ? `<div class="alert-est"><b>Atenção à estreia</b>Com esta seleção, o filme deixa de ser inédito. Na lista deste projeto, ${conflicts.map((x) => esc(x.name)).join(", ")} ${conflicts.length === 1 ? "pede" : "pedem"} ineditismo: confira o regulamento antes de inscrever.</div>` : ""}
     ${r.status === "selecionado" ? `<label class="award">Prêmio ou menção (opcional)<input id="in-award" maxlength="200" value="${esc(r.award || "")}" placeholder="ex.: Prêmio do júri"></label>` : ""}
@@ -809,7 +826,6 @@ function inscricaoHTML(f) {
     <form class="ck-add" id="in-ck-add"><input id="in-ck-new" maxlength="120" placeholder="Adicionar item" aria-label="Novo item do checklist"><button class="btn ghost">Adicionar</button></form>
     <label class="kicker" for="in-notes">Notas (só você vê)</label>
     <textarea id="in-notes" maxlength="4000" rows="4" placeholder="Senha do link enviado, contatos da curadoria, datas importantes…">${esc(r.notes || "")}</textarea>
-    ${S.films.length > 1 ? `<div class="move"><label for="in-move">Mover para outra lista</label><select id="in-move"><option value="">escolha a lista</option>${S.films.filter((x) => x.id !== S.film).map((x) => `<option value="${esc(x.id)}">${esc(x.title)}</option>`).join("")}</select><small>A situação, o checklist e as notas vão junto.</small></div>` : ""}
     <p class="muted small" id="in-status" aria-live="polite"></p>
   </section>`;
 }
@@ -823,6 +839,18 @@ async function saveRow(fid, patch) {
 }
 function bindInscricao(f) {
   const r = rowOf(f.id) || {};
+  if (inGeneral()) {
+    $("#in-notes").onchange = (e) => saveRow(f.id, { notes: e.target.value.slice(0, 4000) || null });
+    if ($("#in-move")) $("#in-move").onchange = (e) => e.target.value && moveRow(f.id, e.target.value);
+    if ($("#in-newproj-go")) $("#in-newproj-go").onclick = async () => {
+      const title = ($("#in-newproj").value.trim() || "Meu projeto").slice(0, 200);
+      const { data, error } = await S.sb.from("films").insert({ user_id: S.user.id, title }).select(FILM_COLS).single();
+      if (error) { console.error(error); return toast("Não foi possível criar o projeto."); }
+      S.films = sortFilms([...S.films, data]);
+      moveRow(f.id, data.id);
+    };
+    return;
+  }
   let list = checklistOf(r).map((x) => ({ ...x }));
   const save = () => saveRow(f.id, { checklist: list }).then((ok) => ok && refreshDetail(f.id));
   $("#in-ck").onchange = (e) => { const i = +e.target.dataset.i; if (Number.isInteger(i)) { list[i].d = e.target.checked; save(); } };
@@ -838,11 +866,11 @@ async function moveRow(fid, to) {
   const from = S.film;
   const target = S.films.find((x) => x.id === to);
   if (S.rows.some((r) => r.festival_id === fid && r.film_id === to)) {
-    $("#in-move").value = "";
+    if ($("#in-move")) $("#in-move").value = "";
     return toast(`Este festival já está em “${target?.title}”.`);
   }
   const { error } = await rowQuery(S.sb.from("saved_festivals").update({ film_id: to }), fid);
-  if (error) { console.error(error); $("#in-move").value = ""; return toast("Não foi possível mover. Tente de novo."); }
+  if (error) { console.error(error); if ($("#in-move")) $("#in-move").value = ""; return toast("Não foi possível mover. Tente de novo."); }
   const r = S.rows.find((x) => x.festival_id === fid && x.film_id === from);
   if (r) r.film_id = to;
   applyFilm(); renderAccount(); renderTable();
@@ -1033,7 +1061,7 @@ function openDetail(id) {
   if (f.rulesUrl) acts.push(`<a class="btn ghost" href="${esc(f.rulesUrl)}" target="_blank" rel="noopener">Regulamento ↗</a>`);
   acts.push(`<button class="btn ghost" id="dt-share">${SHARE_ICO} Compartilhar</button>`);
   acts.push(`<button class="btn ghost" id="dt-save">${S.v4 && S.films.length > 1 ? (inFilms.length ? `★ Em ${inFilms.length === 1 ? `“${esc(inFilms[0].title)}”` : `${inFilms.length} projetos`}` : "☆ Salvar em um projeto") : saved ? "★ Salvo" : "☆ Salvar"}</button>`);
-  if (saved && S.trackSupported) {
+  if (saved && S.trackSupported && !inGeneral()) {
     const cur = S.track.get(id) || "quero";
     acts.push(`<label class="sr" for="dt-track">Situação</label><select id="dt-track">${TRACK.map(([v, l]) => `<option value="${v}" ${v === cur ? "selected" : ""}>${l}</option>`).join("")}</select>`);
   }

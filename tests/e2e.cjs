@@ -137,7 +137,6 @@ export function createClient() {
   await a.click("#s-mine");
   console.log("aba salvos:", await a.textContent("#count"), "|", await a.textContent("#s-mine"));
   await a.screenshot({ path: `${out}/logged.png`, fullPage: false });
-  await a.locator("#mine-bar").screenshot({ path: `${out}/v4-acompanhar.png` });
   // planilha dos salvos (.xlsx gerada no navegador)
   const [xl] = await Promise.all([a.waitForEvent("download"), a.click("#mine-xlsx")]);
   await xl.saveAs(`${out}/salvos.xlsx`);
@@ -182,7 +181,9 @@ export function createClient() {
   if (!(await v.isVisible("#detail[open]"))) { await v.locator("#tb tr", { hasText: "Locarno" }).locator("td.ev").click(); }
   if (!(await v.textContent("#dt-save")).includes("Salvo")) await v.click("#dt-save");
   await v.waitForSelector("#savein[open]");
-  await v.check("#si-list input >> nth=0");
+  await v.click("#si-new");
+  await v.fill("#si-name", "Meu projeto");
+  await v.click("#si-create");
   await v.waitForTimeout(150);
   await v.click("#savein button[value=close]");
   await v.waitForSelector("#dt-track");
@@ -345,6 +346,31 @@ export function createClient() {
   await z.waitForTimeout(200);
   console.log("projetos depois de apagar:", await z.evaluate(() => JSON.stringify(window.__db.films.map((f) => f.title))));
   assert.equal(await z.evaluate(() => window.__db.films.length), 0);
+  await z.click("#mine-all");
+  await z.waitForTimeout(150);
+  // "Para acompanhar": sem situação nem checklist; dá para criar um projeto e mover
+  await z.locator("#tb tr", { hasText: "Curta Cinema" }).first().locator(".star").click();
+  await z.waitForSelector("#savein[open] #si-list input");
+  await z.check("#si-list input >> nth=0");
+  await z.waitForTimeout(150);
+  await z.click("#savein button[value=close]");
+  await z.click("#account #nav-saved");
+  await z.waitForTimeout(150);
+  await z.locator("#mine-bar").screenshot({ path: `${out}/v4-acompanhar.png` });
+  await z.locator("#tb tr", { hasText: "Curta Cinema" }).first().locator("td.ev").click();
+  await z.waitForSelector("#detail[open] #in-newproj");
+  assert.equal(await z.isVisible("#dt-track"), false);
+  assert.equal(await z.isVisible("#in-ck"), false);
+  await z.fill("#in-notes", "ver categoria doc");
+  await z.locator("#in-notes").blur();
+  await z.waitForTimeout(150);
+  await z.fill("#in-newproj", "Fala Comigo");
+  await z.screenshot({ path: `${out}/v4-acompanhar-ficha.png` });
+  await z.click("#in-newproj-go");
+  await z.waitForTimeout(250);
+  console.log("acompanhar → projeto:", await z.textContent("#toast"));
+  const mv = await z.evaluate(() => { const p = window.__db.films.find((f) => f.title === "Fala Comigo"); const ids = new Set(window.__db.films.map((f) => f.id)); return window.__db.saved_festivals.filter((r) => r.festival_id.startsWith("curta-cinema") && ids.has(r.film_id)).map((r) => [r.film_id === p.id, r.notes]); });
+  assert.deepEqual(mv, [[true, "ver categoria doc"]]);
   await z.click("#mine-all");
 
   // filtro "Fecham em 30 dias" e "Mostrar mais"
