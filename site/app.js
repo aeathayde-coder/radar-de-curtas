@@ -394,7 +394,9 @@ function buildAdvanced() {
     .join("");
   const chip = (v, label) => `<label class="chip"><input type="checkbox" value="${esc(v)}"><span>${esc(label || v)}</span></label>`;
   $("#quals").innerHTML = QUAL_ORDER.filter((q) => S.all.some((f) => f.qualifies.includes(q))).map((q) => chip(q, q === "EFA" ? "European Film Awards" : q)).join("");
-  const themes = [...new Set(S.all.flatMap((f) => f.themes))].sort((a, b) => a.localeCompare(b, "pt"));
+  // Só temas com pelo menos 3 festivais (ou já escolhidos no link), para o filtro não prometer o que a base ainda não tem
+  const tc = new Map(); S.all.forEach((f) => f.themes.forEach((t) => tc.set(t, (tc.get(t) || 0) + 1)));
+  const themes = [...tc.keys()].filter((t) => tc.get(t) >= 3 || S.themes.has(t)).sort((a, b) => a.localeCompare(b, "pt"));
   $("#themes").innerHTML = themes.map((t) => chip(t)).join("");
   $("#themes-set").hidden = !themes.length;
   const countries = [...new Set(S.all.map((f) => f.country).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt"));
