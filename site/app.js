@@ -627,8 +627,9 @@ function openSaveIn(id) {
     const hint = x.general ? `<small>sem projeto, apenas para acompanhar os prazos</small>` : "";
     return `<label class="si-row"><input type="checkbox" data-film="${esc(x.id)}" ${on ? "checked" : ""}><span>${esc(x.title)}${hint}</span></label>`;
   }).join("");
-  $("#si-newbox").hidden = true;
-  $("#si-new").hidden = false;
+  // Sem nenhuma opção (migração antiga e nenhum projeto): já abre o campo do nome
+  $("#si-newbox").hidden = list.length > 0;
+  $("#si-new").hidden = list.length === 0;
   $("#si-name").value = "";
   $("#savein").dataset.id = id;
   $("#savein").showModal();
