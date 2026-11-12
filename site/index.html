@@ -250,16 +250,16 @@
   <form method="dialog" class="dlg">
     <span class="kicker" id="si-h">Salvar em</span>
     <h2 id="si-title"></h2>
-    <p class="muted small">Marque os filmes que vão concorrer a este festival. Cada filme tem a própria situação, checklist e notas.</p>
+    <p class="muted small">Em qual projeto este festival entra? Marque um ou mais. Cada projeto tem a própria situação, checklist e notas.</p>
     <div class="si-list" id="si-list"></div>
-    <button type="button" class="link-btn" id="si-new">+ novo filme</button>
+    <button type="button" class="link-btn" id="si-new">+ novo projeto</button>
     <div class="dlg-actions"><button value="close" class="btn">Pronto</button></div>
   </form>
 </dialog>
 
 <dialog id="film-dlg" aria-labelledby="fm-title">
   <form class="dlg" id="film-form">
-    <h2 id="fm-title">Ficha do filme</h2>
+    <h2 id="fm-title">Ficha do projeto</h2>
     <p class="muted small">Com a ficha preenchida, o Radar mostra em Meus salvos quais festivais estão dentro dos requisitos do filme.</p>
     <label class="fld">Título<input id="fm-name" maxlength="200" required></label>
     <div class="fld-row">
@@ -273,7 +273,7 @@
     <label class="fld">Estreia<select id="fm-prem"><option value="inedito">Inédito (ainda não exibido)</option><option value="exibido_brasil">Já exibido no Brasil</option><option value="exibido_exterior">Já exibido fora do Brasil</option></select></label>
     <p class="muted small" id="fm-status" aria-live="polite"></p>
     <div class="dlg-actions">
-      <button type="button" class="link-btn" id="fm-del" hidden>Apagar filme</button>
+      <button type="button" class="link-btn" id="fm-del" hidden>Apagar projeto</button>
       <button type="button" class="btn ghost" onclick="this.closest('dialog').close()">Cancelar</button>
       <button class="btn">Salvar</button>
     </div>

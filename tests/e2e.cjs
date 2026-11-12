@@ -111,7 +111,25 @@ export function createClient() {
   await a.click("#login");
   await a.waitForSelector("#open-profile");
   await a.click("#tb tr:nth-child(3) .star");
+  await a.waitForSelector("#savein[open] #si-name");
+  await a.fill("#si-name", "Meu projeto");
+  await a.click("#si-create");
+  await a.waitForTimeout(150);
   await a.click("#tb tr:nth-child(5) .star");
+  await a.waitForSelector("#savein[open] #si-list input");
+  await a.screenshot({ path: `${out}/v4-salvar-em.png` });
+  await a.check("#si-list input >> nth=0");
+  await a.waitForTimeout(150);
+  await a.click("#savein button[value=close]");
+  // com um projeto só, tocar de novo na estrela tira direto
+  await a.click("#tb tr:nth-child(5) .star");
+  await a.waitForTimeout(150);
+  console.log("tirou direto:", await a.textContent("#toast"));
+  await a.click("#tb tr:nth-child(5) .star");
+  await a.waitForSelector("#savein[open] #si-list input");
+  await a.check("#si-list input >> nth=0");
+  await a.waitForTimeout(150);
+  await a.click("#savein button[value=close]");
   await a.waitForTimeout(100);
   console.log("toast:", await a.textContent("#toast"));
   console.log("salvos no db:", await a.evaluate(() => window.__db.saved_festivals.map((r) => r.festival_name)));
@@ -161,6 +179,9 @@ export function createClient() {
   await v.waitForTimeout(200);
   if (!(await v.isVisible("#detail[open]"))) { await v.locator("#tb tr", { hasText: "Locarno" }).locator("td.ev").click(); }
   if (!(await v.textContent("#dt-save")).includes("Salvo")) await v.click("#dt-save");
+  await v.waitForSelector("#savein[open]");
+  if (await v.isVisible("#si-name")) { await v.fill("#si-name", "Meu projeto"); await v.click("#si-create"); }
+  else { await v.check("#si-list input >> nth=0"); await v.click("#savein button[value=close]"); }
   await v.waitForSelector("#dt-track");
   await v.selectOption("#dt-track", "inscrito");
   await v.waitForTimeout(200);
@@ -213,9 +234,20 @@ export function createClient() {
   await z.waitForSelector("#tb td.name");
   await z.click("#login");
   await z.waitForSelector("#open-profile");
+  // primeira estrela: pede o nome do projeto
   await z.locator("#tb tr", { hasText: "Curta Cinema" }).first().locator(".star").click();
-  await z.locator("#tb tr", { hasText: "Go Short" }).first().locator(".star").click();
-  await z.locator("#tb tr", { hasText: "Cannes: Competição" }).first().locator(".star").click();
+  await z.waitForSelector("#savein[open] #si-name");
+  await z.screenshot({ path: `${out}/v4-primeiro-projeto.png` });
+  await z.fill("#si-name", "Meu projeto");
+  await z.click("#si-create");
+  await z.waitForTimeout(200);
+  for (const n of ["Go Short", "Cannes: Competição"]) {
+    await z.locator("#tb tr", { hasText: n }).first().locator(".star").click();
+    await z.waitForSelector("#savein[open]");
+    await z.check("#si-list input >> nth=0");
+    await z.waitForTimeout(150);
+    await z.click("#savein button[value=close]");
+  }
   await z.waitForTimeout(200);
   console.log("filmes:", await z.evaluate(() => JSON.stringify(window.__db.films.map((f) => f.title))), "| salvos:", await z.evaluate(() => window.__db.saved_festivals.filter((r) => r.film_id).length));
   await z.click("#account #nav-saved");
