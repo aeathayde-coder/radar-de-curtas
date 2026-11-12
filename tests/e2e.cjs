@@ -332,6 +332,19 @@ export function createClient() {
   const moved = await z.evaluate(() => { const b = window.__db.films.find((f) => f.title === "Curta do baterista"); return window.__db.saved_festivals.filter((r) => r.festival_id.startsWith("go-short")).map((r) => [r.film_id === b.id, r.notes]); });
   console.log("go short:", JSON.stringify(moved));
   assert.deepEqual(moved, [[true, "nota que vai junto"]]);
+  // apagar o último projeto também é possível
+  await z.click("#films [data-film] >> nth=1");
+  await z.waitForTimeout(150);
+  await z.click("#film-edit");
+  z.once("dialog", (d) => d.accept());
+  await z.click("#fm-del");
+  await z.waitForTimeout(200);
+  z.once("dialog", (d) => d.accept());
+  await z.click("#film-edit");
+  await z.click("#fm-del");
+  await z.waitForTimeout(200);
+  console.log("projetos depois de apagar:", await z.evaluate(() => JSON.stringify(window.__db.films.map((f) => f.title))));
+  assert.equal(await z.evaluate(() => window.__db.films.length), 0);
   await z.click("#mine-all");
 
   // filtro "Fecham em 30 dias" e "Mostrar mais"

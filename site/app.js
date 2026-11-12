@@ -710,7 +710,7 @@ function renderFilms(mine) {
   const info = f ? [f.duration_min ? `${f.duration_min} min` : "", f.genre || "", PREMIERE_LABEL[f.premiere_status] || "", f.country || ""].filter(Boolean).join(" · ") : "";
   box.innerHTML = `<span class="kicker">Suas listas</span>
     <div class="film-chips">${S.films.map((x) => `<button class="fchip" data-film="${esc(x.id)}" aria-pressed="${x.id === S.film}">${esc(x.title)}</button>`).join("")}<button class="fchip add" id="film-new">+ novo projeto</button></div>
-    ${f && !f.general ? `<p class="film-info">${esc(info)}${!f.duration_min || !f.genre ? `${info ? " · " : ""}<span class="muted">preencha a ficha para ver quais festivais estão dentro dos requisitos</span>` : ""} <button class="link-btn" id="film-edit">editar ficha</button></p>` : ""}`;
+    ${f && !f.general ? `<p class="film-info">${esc(info)}${!f.duration_min || !f.genre ? `${info ? " · " : ""}<span class="muted">preencha a ficha para ver quais festivais estão dentro dos requisitos</span>` : ""} <button class="link-btn" id="film-edit">editar ou apagar</button></p>` : ""}`;
 }
 
 function openFilm(film) {
@@ -723,7 +723,7 @@ function openFilm(film) {
   $("#fm-done").value = (f.finished_on || "").slice(0, 7);
   $("#fm-prem").value = f.premiere_status || "inedito";
   $("#fm-country").value = f.country || "Brasil";
-  $("#fm-del").hidden = !film || S.films.length < 2;
+  $("#fm-del").hidden = !film;
   $("#fm-status").textContent = "";
   $("#film-dlg").dataset.id = film ? film.id : "";
   $("#film-dlg").showModal();
