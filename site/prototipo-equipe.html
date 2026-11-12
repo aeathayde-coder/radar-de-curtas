@@ -206,6 +206,7 @@ const people = {
   maisa: { n: "Maísa Fontes", i: "MF", role: "leitor" },
 };
 let me = "ana";
+const seen = {};
 let members = [
   { id: "ana", st: "ok" },
   { id: "felipe", st: "ok" },
@@ -318,7 +319,7 @@ $("#edit-film").onclick = () => toast("Abre a ficha do projeto, como hoje.");
 document.querySelectorAll("[data-as]").forEach((b) => (b.onclick = () => {
   document.querySelectorAll("[data-as]").forEach((x) => x.setAttribute("aria-pressed", x === b));
   me = b.dataset.as; renderTop();
-  if (me !== "ana") $("#prefs").showModal();
+  if (me !== "ana" && !seen[me]) { seen[me] = 1; $("#prefs").showModal(); }
 }));
 $("#sim-invite").onclick = () => $("#mail").showModal();
 $("#ml-open").onclick = () => { $("#mail").close(); $("#lg-err").hidden = true; $("#login").showModal(); };
@@ -326,8 +327,9 @@ document.querySelectorAll(".acct").forEach((a) => (a.onclick = () => {
   if (a.dataset.ok !== "1") { $("#lg-err").hidden = false; return; }
   $("#login").close();
   document.querySelectorAll("[data-as]").forEach((x) => x.setAttribute("aria-pressed", x.dataset.as === "felipe"));
-  me = "felipe"; renderTop(); $("#prefs").showModal();
+  me = "felipe"; seen.felipe = 1; renderTop(); $("#prefs").showModal();
 }));
+document.querySelectorAll("dialog").forEach((d) => d.addEventListener("click", (e) => { if (e.target === d) d.close(); }));
 renderTop();
 </script>
 </body>
