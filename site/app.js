@@ -235,7 +235,7 @@ function renderTable() {
           const tr = saved && S.trackSupported ? `<span class="mystatus">${esc(TRACK_LABEL[S.track.get(f.id)] || "Quero inscrever")}</span>` : "";
           return `<tr class="clickable${saved ? " is-saved" : ""}" data-open="${esc(f.id)}">
             <td class="save"><button class="star" data-id="${esc(f.id)}" aria-pressed="${saved}" aria-label="${saved ? "Remover dos salvos" : "Salvar"}: ${esc(f.name)}" title="${logged ? (saved ? "Remover dos salvos" : "Salvar e receber lembrete") : "Entre com Google para salvar"}">${saved ? "★" : "☆"}</button></td>
-            <td class="name">${name}<span class="loc">${esc(f.local || f.country || "")}${site}${f.checkedAt ? `<span class="chk">conferido em ${fmt(f.checkedAt).replace(/ \d{4}$/, "")}</span>` : ""}</span>${tr}${S.s === "mine" ? fitHTML(f) : ""}<span class="more" aria-hidden="true">Ver detalhes →</span></td>
+            <td class="name">${name}<span class="loc">${esc(f.local || f.country || "")}${site}${f.checkedAt ? `<span class="chk">conferido em ${fmt(f.checkedAt).replace(/ \d{4}$/, "")}</span>` : ""}</span>${tr}${S.s === "mine" ? fitHTML(f) + inscBadge(f) : ""}<span class="more" aria-hidden="true">Ver detalhes →</span></td>
             <td class="mono dl-cell" data-label="Inscrições até">${f.deadline ? (f.dateStatus === "Confirmada" ? "" : "~") + fmt(f.deadline) : "a confirmar"}${sub}</td>
             <td class="st"><span class="pill p-${st.k}">${st.label}</span></td>
             <td class="ev" data-label="Próxima edição">${esc(f.event || "a definir")}</td>
@@ -521,7 +521,7 @@ async function toggleSave(id) {
   }
   if (!was) {
     const optin = S.profile?.email_opt_in;
-    const where = S.v4 && S.films.length > 1 ? ` em “${filmOf()?.title}”` : "";
+    const where = S.v4 && filmOf() ? ` em “${filmOf().title}”` : "";
     toast(optin ? `Salvo${where}. O lembrete chega por e-mail às 8h; se não aparecer, olhe em Promoções e Spam.` : `Salvo${where}.`);
   }
 }
@@ -629,6 +629,9 @@ function renderFilms(mine) {
   box.hidden = !(mine && S.v4);
   if (box.hidden) return;
   const f = filmOf();
+  $("#mine-help").innerHTML = f
+    ? `Os festivais de <b>${esc(f.title)}</b>. Toque em um festival para marcar a situação da inscrição, usar o checklist de materiais e escrever notas. Para incluir festivais neste filme, use a estrela ☆ na lista completa: eles entram no filme selecionado aqui.`
+    : "Salve festivais com a estrela ☆ na lista completa. O primeiro filme é criado na hora e você renomeia na ficha.";
   const info = f ? [f.duration_min ? `${f.duration_min} min` : "", f.genre || "", PREMIERE_LABEL[f.premiere_status] || "", f.country || ""].filter(Boolean).join(" · ") : "";
   box.innerHTML = `<span class="kicker">Seus filmes</span>
     <div class="film-chips">${S.films.map((x) => `<button class="fchip" data-film="${esc(x.id)}" aria-pressed="${x.id === S.film}">${esc(x.title)}</button>`).join("")}<button class="fchip add" id="film-new">+ novo filme</button></div>
@@ -696,6 +699,12 @@ function fitOf(f, film) {
   if (chk.length) return { k: "chk", t: `Confira: ${chk.join("; ")}` };
   return { k: "ok", t: "Dentro dos requisitos" };
 }
+function inscBadge(f) {
+  if (!S.v4) return "";
+  const r = rowOf(f.id); if (!r) return "";
+  const list = checklistOf(r); const done = list.filter((x) => x.d).length;
+  return `<span class="insc-badge">checklist ${done}/${list.length}${r.notes ? " · com notas" : ""}${r.award ? " · prêmio" : ""}</span>`;
+}
 function fitHTML(f) {
   if (!S.v4) return "";
   const r = fitOf(f, filmOf());
@@ -754,7 +763,7 @@ async function openReport() {
   const rowsData = list.map((f) => {
     const st = S.track.get(f.id); const r = rowOf(f.id) || {};
     const fee = feeFor(f); const v = toBRL(fee.v, fee.c);
-    return { f, st, award: r.award, v, fee };
+    return { f, st, award: r.award, notes: r.notes, v, fee };
   });
   const sel = rowsData.filter((x) => x.st === "selecionado").length;
   const prizes = rowsData.filter((x) => x.award).length;
@@ -770,11 +779,13 @@ h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:40px;m
 table{width:100%;border-collapse:collapse;font-size:14px}th{font-family:"Geist Mono",Menlo,monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#62625f;text-align:left;padding:8px 6px;border-bottom:1px solid #0e0e0e;font-weight:400}td{padding:10px 6px;border-bottom:1px dotted #a9a9a4;vertical-align:top}
 .t{font-family:"Geist Mono",Menlo,monospace;font-size:11px;padding:2px 7px;border:1px solid #0e0e0e;white-space:nowrap}.t.s{background:#c6ff3d;border-color:#c6ff3d}
 .foot{font-size:12px;color:#62625f;margin-top:18px}button{font:inherit;background:#0e0e0e;color:#fff;border:0;border-radius:99px;padding:10px 18px;cursor:pointer;margin-top:18px}
-@media print{button{display:none}body{margin:0}}</style></head><body>
+.nt{display:none;font-size:12.5px;color:#62625f;margin-top:4px}body.com-notas .nt{display:block}.opt{display:block;font-size:13px;color:#62625f;margin:0 0 12px}
+@media print{button,.opt{display:none}body{margin:0}}</style></head><body>
 <div class="k">Radar de Festivais · relatório de circulação</div><h1>${esc(film?.title || "Meus festivais")}</h1>
 <div class="m">${esc(info)}${info ? " · " : ""}gerado em ${fmt(today)}</div>
 <div class="sum"><div><span class="k">Inscrições</span><b>${rowsData.length}</b></div><div><span class="k">Seleções</span><b>${sel}</b></div><div><span class="k">Prêmios</span><b>${prizes}</b></div><div><span class="k">Investido</span><b>${brl.format(total)}</b></div></div>
-${rowsData.length ? `<table><thead><tr><th>Festival</th><th>País</th><th>Prazo</th><th>Resultado</th><th>Custo</th></tr></thead><tbody>${rowsData.map((x) => `<tr><td>${esc(x.f.name)}</td><td>${esc(x.f.country || "")}</td><td>${x.f.deadline ? fmt(x.f.deadline) : ""}</td><td><span class="t${x.st === "selecionado" ? " s" : ""}">${esc(TRACK_LABEL[x.st])}</span>${x.award ? ` ${esc(x.award)}` : ""}</td><td>${x.fee.v === 0 ? "gratuito" : x.v != null ? brl.format(x.v) : ""}</td></tr>`).join("")}</tbody></table>` : `<p>Nenhuma inscrição marcada ainda. Em Meus salvos, marque os festivais como Inscrito, Selecionado ou Não selecionado.</p>`}
+${rowsData.some((x) => x.notes) ? `<label class="opt"><input type="checkbox" onchange="document.body.classList.toggle('com-notas',this.checked)"> Incluir minhas notas (ficam de fora por padrão, porque podem ter senhas e contatos)</label>` : ""}
+${rowsData.length ? `<table><thead><tr><th>Festival</th><th>País</th><th>Prazo</th><th>Resultado</th><th>Custo</th></tr></thead><tbody>${rowsData.map((x) => `<tr><td>${esc(x.f.name)}${x.notes ? `<div class="nt">${esc(x.notes).replace(/\n/g, "<br>")}</div>` : ""}</td><td>${esc(x.f.country || "")}</td><td>${x.f.deadline ? fmt(x.f.deadline) : ""}</td><td><span class="t${x.st === "selecionado" ? " s" : ""}">${esc(TRACK_LABEL[x.st])}</span>${x.award ? ` ${esc(x.award)}` : ""}</td><td>${x.fee.v === 0 ? "gratuito" : x.v != null ? brl.format(x.v) : ""}</td></tr>`).join("")}</tbody></table>` : `<p>Nenhuma inscrição marcada ainda. Em Meus salvos, marque os festivais como Inscrito, Selecionado ou Não selecionado.</p>`}
 <p class="foot">Custos convertidos para reais pela cotação do dia${FX ? ` (${fmt(FX.date)})` : ""}. Fonte dos dados dos festivais: radardefestivais.com.br.</p>
 <button onclick="print()">Imprimir ou salvar em PDF</button></body></html>`;
   const w = window.open("", "_blank");

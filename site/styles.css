@@ -576,3 +576,4 @@ td.notes .flag.gen{border-style:dotted;white-space:normal;max-width:100%}
 .mine-bar{grid-template-columns:minmax(0,1fr)}
 .mine-bar .mine-acts{justify-content:flex-start}
 .insc .ck input{accent-color:#0e0e0e;width:16px;height:16px}
+.insc-badge{display:block;margin-top:5px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
