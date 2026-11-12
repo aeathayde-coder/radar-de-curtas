@@ -126,12 +126,14 @@
   <section aria-labelledby="h-all" class="stack" id="lista">
     <div class="sh"><div><span class="kicker" id="k-all">02 · base completa</span><h2 id="h-all">Todos os <em>festivais</em></h2></div></div>
     <div class="mine-bar" id="mine-bar" hidden>
+      <div class="films" id="films" hidden></div>
       <p>Os festivais que você salvou, com a situação de cada inscrição. Toque em um festival para marcar se vai inscrever, se já inscreveu ou se foi selecionado.</p>
       <div class="mine-acts">
         <button class="btn ghost" id="mine-prefs">Lembretes por e-mail</button>
         <button class="btn" id="mine-cal">Assinar agenda</button>
         <button class="btn ghost" id="mine-ics">Exportar para o calendário</button>
         <button class="btn ghost" id="mine-xlsx">Baixar planilha</button>
+        <button class="btn ghost" id="mine-report" hidden>Relatório de circulação</button>
         <button class="link-btn" id="mine-all">Ver todos os festivais</button>
       </div>
       <div class="searches" id="searches" hidden>
@@ -159,9 +161,14 @@
         <button data-sort="status" aria-pressed="false">Situação</button>
       </div>
       <span class="count" id="count" aria-live="polite"></span>
-      <button class="btn ghost save-search" id="save-search" hidden>☆ Salvar esta busca</button>
+      <div class="viewtog" role="group" aria-label="Ver como"><button data-view="list" aria-pressed="true">Lista</button><button data-view="cal" aria-pressed="false">Calendário</button></div>
+    </div>
+    <div class="ss-bar" id="ss-bar" hidden>
+      <button class="btn" id="save-search">☆ Salvar esta busca</button>
+      <span>Receba um e-mail quando entrar no Radar um festival que combine com estes filtros.</span>
     </div>
 
+    <div id="calview" hidden></div>
     <div class="tablebox">
       <table>
         <thead><tr>
@@ -235,6 +242,29 @@
     <div class="dlg-actions">
       <button type="button" class="link-btn" id="pf-logout">Sair</button>
       <button value="close" class="btn">Fechar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="film-dlg" aria-labelledby="fm-title">
+  <form class="dlg" id="film-form">
+    <h2 id="fm-title">Ficha do filme</h2>
+    <p class="muted small">Com a ficha preenchida, o Radar mostra em Meus salvos quais festivais estão dentro dos requisitos do filme.</p>
+    <label class="fld">Título<input id="fm-name" maxlength="200" required></label>
+    <div class="fld-row">
+      <label class="fld">Duração (min)<input id="fm-dur" type="number" min="1" max="600" inputmode="numeric"></label>
+      <label class="fld">Gênero<select id="fm-genre"><option value="">não informado</option><option>Ficção</option><option>Documentário</option><option>Animação</option><option>Experimental</option><option>Videoclipe</option></select></label>
+    </div>
+    <div class="fld-row">
+      <label class="fld">Finalizado em<input id="fm-done" type="month"></label>
+      <label class="fld">País de produção<input id="fm-country" maxlength="60"></label>
+    </div>
+    <label class="fld">Estreia<select id="fm-prem"><option value="inedito">Inédito (ainda não exibido)</option><option value="exibido_brasil">Já exibido no Brasil</option><option value="exibido_exterior">Já exibido fora do Brasil</option></select></label>
+    <p class="muted small" id="fm-status" aria-live="polite"></p>
+    <div class="dlg-actions">
+      <button type="button" class="link-btn" id="fm-del" hidden>Apagar filme</button>
+      <button type="button" class="btn ghost" onclick="this.closest('dialog').close()">Cancelar</button>
+      <button class="btn">Salvar</button>
     </div>
   </form>
 </dialog>

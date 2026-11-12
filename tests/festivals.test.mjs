@@ -108,3 +108,10 @@ test("busca da planilha publicada e erro claro quando o link não é CSV", async
     await assert.rejects(fetchFestivals({ csvUrl: "https://x", fresh: true }), /publique a aba/);
   } finally { globalThis.fetch = orig; }
 });
+
+test("lembretes: mesmo festival salvo em dois filmes gera um aviso só", () => {
+  const f = { id: "x", name: "X", deadline: "2026-12-12", dateStatus: "Confirmada" };
+  const prof = { email: "a@b.c", email_opt_in: true, reminder_days: [30] };
+  const out = selectReminders({ saved: [{ user_id: "u", festival_id: "x", profiles: prof }, { user_id: "u", festival_id: "x", profiles: prof }], festivals: [f], today: "2026-11-12" });
+  assert.equal(out[0].items.length, 1);
+});

@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 
 // Supabase simulado: sessão em memória + tabelas em memória
 const FAKE_SUPABASE = `
-const db = { saved_festivals: [], saved_searches: [], profiles: [{ id: "u1", email: "ana@example.com", email_opt_in: true, reminder_days: [30,7,1], change_alerts: true, calendar_token: null }] };
+const db = { films: [], saved_festivals: [], saved_searches: [], profiles: [{ id: "u1", email: "ana@example.com", email_opt_in: true, reminder_days: [30,7,1], change_alerts: true, calendar_token: null }] };
 let session = null, listeners = [];
 function q(table) {
   let filters = [], op = "select", payload = null;
@@ -23,7 +23,7 @@ function q(table) {
       if (op === "select") { data = db[table].filter(match); if (api._single) data = data[0] || null; }
       if (op === "insert") { const row = { id: String(Math.random()).slice(2), notify: true, ...payload }; db[table].push(row); data = api._single ? row : [row]; }
       if (op === "delete") db[table] = db[table].filter((r) => !match(r));
-      if (op === "update") db[table].filter(match).forEach((r) => Object.assign(r, payload));
+      if (op === "update") { db[table].filter(match).forEach((r) => Object.assign(r, payload)); if (api._single) data = db[table].filter(match)[0] || null; }
       window.__db = db;
       return Promise.resolve({ data, error: null }).then(res, rej);
     },
@@ -205,6 +205,55 @@ export function createClient() {
   await w.waitForTimeout(100);
   assert.equal(await w.evaluate(() => window.__db.profiles[0].change_alerts), false);
   await w.screenshot({ path: `${out}/v3-profile.png` });
+
+  // ——— v4: filmes, rótulos de requisitos, checklist, notas, estreia, calendário, relatório ———
+  const z = await ctx.newPage();
+  z.on("pageerror", (e) => errors.push(e.message));
+  await z.goto("http://localhost:8889/");
+  await z.waitForSelector("#tb td.name");
+  await z.click("#login");
+  await z.waitForSelector("#open-profile");
+  await z.locator("#tb tr", { hasText: "Curta Cinema" }).first().locator(".star").click();
+  await z.locator("#tb tr", { hasText: "Go Short" }).first().locator(".star").click();
+  await z.locator("#tb tr", { hasText: "Cannes: Competição" }).first().locator(".star").click();
+  await z.waitForTimeout(200);
+  console.log("filmes:", await z.evaluate(() => JSON.stringify(window.__db.films.map((f) => f.title))), "| salvos:", await z.evaluate(() => window.__db.saved_festivals.filter((r) => r.film_id).length));
+  await z.click("#account #nav-saved");
+  await z.waitForSelector("#films:not([hidden])");
+  await z.click("#film-edit");
+  await z.fill("#fm-name", "Cuidado com o que deseja");
+  await z.fill("#fm-dur", "14");
+  await z.selectOption("#fm-genre", "Ficção");
+  await z.click("#film-form button.btn:not(.ghost)");
+  await z.waitForTimeout(200);
+  const fits = await z.locator("#tb .fit").allTextContents();
+  console.log("rótulos:", fits);
+  assert.ok(fits.some((t) => t.startsWith("Fora dos requisitos")), "Go Short deve aparecer fora dos requisitos");
+  await z.locator("#tb tr", { hasText: "Curta Cinema" }).first().locator("td.ev").click();
+  await z.waitForSelector("#detail[open] #in-ck");
+  await z.check("#in-ck input[data-i='0']");
+  await z.fill("#in-notes", "Senha do link: teste");
+  await z.locator("#in-notes").blur();
+  await z.waitForTimeout(150);
+  await z.selectOption("#dt-track", "selecionado");
+  await z.waitForTimeout(250);
+  console.log("estreia:", (await z.textContent("#toast")).slice(0, 120));
+  const row = await z.evaluate(() => JSON.stringify(window.__db.saved_festivals.find((r) => r.festival_id.startsWith("curta-cinema"))));
+  console.log("linha salva:", row.slice(0, 200));
+  assert.match(row, /Senha do link/);
+  await z.screenshot({ path: `${out}/v4-ficha.png` });
+  await z.click("#dt-close");
+  await z.locator("#mine-bar").screenshot({ path: `${out}/v4-mine-bar.png` });
+  await z.screenshot({ path: `${out}/v4-lista.png`, fullPage: false });
+  await z.click("[data-view='cal']");
+  await z.waitForSelector("#calview:not([hidden]) .cal");
+  await z.locator("#calview").screenshot({ path: `${out}/v4-calendario.png` });
+  await z.click("[data-view='list']");
+  const [rep] = await Promise.all([z.waitForEvent("popup"), z.click("#mine-report")]);
+  await rep.waitForLoadState();
+  console.log("relatório:", (await rep.textContent("h1")), "|", (await rep.textContent(".sum")).replace(/\s+/g, " "));
+  await rep.screenshot({ path: `${out}/v4-relatorio.png`, fullPage: true });
+  await rep.close();
 
   console.log("erros JS:", errors);
   assert.equal(errors.length, 0);

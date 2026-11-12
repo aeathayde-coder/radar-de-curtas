@@ -44,6 +44,7 @@ const S = {
   sortKey: "deadline", sortDir: 1,
   sb: null, user: null, profile: null, saved: new Set(), track: new Map(), trackSupported: false,
   v3: false, searches: [],
+  v4: false, films: [], film: null, rows: [], view: "list",
 };
 
 function status(f) {
@@ -117,7 +118,7 @@ function writeURL() {
 // ——— filtros ———
 const ORIGIN_LABEL = {
   any: "Filmes de qualquer país",
-  national: "Apenas filmes do país do festival",
+  national: "Apenas produções nacionais (do país do festival)",
   "regional-br": "Recorte regional (inclui o Brasil)",
   regional: "Recorte regional (não inclui o Brasil)",
 };
@@ -234,7 +235,7 @@ function renderTable() {
           const tr = saved && S.trackSupported ? `<span class="mystatus">${esc(TRACK_LABEL[S.track.get(f.id)] || "Quero inscrever")}</span>` : "";
           return `<tr class="clickable${saved ? " is-saved" : ""}" data-open="${esc(f.id)}">
             <td class="save"><button class="star" data-id="${esc(f.id)}" aria-pressed="${saved}" aria-label="${saved ? "Remover dos salvos" : "Salvar"}: ${esc(f.name)}" title="${logged ? (saved ? "Remover dos salvos" : "Salvar e receber lembrete") : "Entre com Google para salvar"}">${saved ? "★" : "☆"}</button></td>
-            <td class="name">${name}<span class="loc">${esc(f.local || f.country || "")}${site}${f.checkedAt ? `<span class="chk">conferido em ${fmt(f.checkedAt).replace(/ \d{4}$/, "")}</span>` : ""}</span>${tr}<span class="more" aria-hidden="true">Ver detalhes →</span></td>
+            <td class="name">${name}<span class="loc">${esc(f.local || f.country || "")}${site}${f.checkedAt ? `<span class="chk">conferido em ${fmt(f.checkedAt).replace(/ \d{4}$/, "")}</span>` : ""}</span>${tr}${S.s === "mine" ? fitHTML(f) : ""}<span class="more" aria-hidden="true">Ver detalhes →</span></td>
             <td class="mono dl-cell" data-label="Inscrições até">${f.deadline ? (f.dateStatus === "Confirmada" ? "" : "~") + fmt(f.deadline) : "a confirmar"}${sub}</td>
             <td class="st"><span class="pill p-${st.k}">${st.label}</span></td>
             <td class="ev" data-label="Próxima edição">${esc(f.event || "a definir")}</td>
@@ -250,6 +251,9 @@ function renderTable() {
   $("#k-all").textContent = mine ? "02 · seus festivais" : "02 · base completa";
   $("#mine-bar").hidden = !mine;
   renderSearchTools(mine);
+  renderFilms(mine);
+  $("#mine-report").hidden = !(mine && S.saved.size);
+  renderCalendar(rows);
   renderCalc();
 }
 
@@ -454,7 +458,7 @@ function login() {
 }
 
 async function loadUserData() {
-  if (!S.user) { S.saved = new Set(); S.track = new Map(); S.profile = null; S.searches = []; S.v3 = false; return; }
+  if (!S.user) { S.saved = new Set(); S.track = new Map(); S.profile = null; S.searches = []; S.v3 = false; S.v4 = false; S.films = []; S.rows = []; S.film = null; return; }
   let [savedFull, prof] = await Promise.all([
     S.sb.from("saved_festivals").select("festival_id,status"),
     S.sb.from("profiles").select("email,email_opt_in,reminder_days,change_alerts,calendar_token").eq("id", S.user.id).maybeSingle(),
@@ -466,6 +470,20 @@ async function loadUserData() {
     const ss = await S.sb.from("saved_searches").select("id,label,params,notify").order("created_at");
     S.searches = ss.error ? [] : ss.data;
     if (ss.error) S.v3 = false;
+  }
+  // Migração 4 (planejamento por filme): os salvos passam a pertencer a um filme
+  S.v4 = false;
+  if (S.v3) {
+    const fl = await S.sb.from("films").select("id,title,duration_min,genre,finished_on,premiere_status,country").order("created_at");
+    if (!fl.error) {
+      const rows = await S.sb.from("saved_festivals").select("festival_id,film_id,status,notes,checklist,award");
+      if (!rows.error) {
+        S.v4 = true; S.films = fl.data || []; S.rows = rows.data || [];
+        S.trackSupported = true; S.profile = prof.data || null;
+        applyFilm();
+        return;
+      }
+    }
   }
   let saved = savedFull;
   S.trackSupported = !savedFull.error;
@@ -485,9 +503,16 @@ async function toggleSave(id) {
   was ? S.saved.delete(id) : S.saved.add(id);
   if (!was) S.track.set(id, "quero");
   renderTable(); renderAccount(); refreshDetail(id);
+  if (S.v4 && !(await ensureFilm())) { was ? S.saved.add(id) : S.saved.delete(id); renderTable(); renderAccount(); return toast("Não foi possível salvar. Tente de novo."); }
+  let del = S.sb.from("saved_festivals").delete().eq("user_id", S.user.id).eq("festival_id", id);
+  if (S.v4) del = del.eq("film_id", S.film);
   const { error } = was
-    ? await S.sb.from("saved_festivals").delete().eq("user_id", S.user.id).eq("festival_id", id)
-    : await S.sb.from("saved_festivals").insert({ user_id: S.user.id, festival_id: id, festival_name: f?.name });
+    ? await del
+    : await S.sb.from("saved_festivals").insert({ user_id: S.user.id, festival_id: id, festival_name: f?.name, ...(S.v4 ? { film_id: S.film } : {}) });
+  if (!error && S.v4) {
+    if (was) S.rows = S.rows.filter((r) => !(r.festival_id === id && r.film_id === S.film));
+    else S.rows.push({ festival_id: id, film_id: S.film, status: "quero", notes: null, checklist: null, award: null });
+  }
   if (error) {
     console.error(error);
     was ? S.saved.add(id) : S.saved.delete(id);
@@ -496,7 +521,8 @@ async function toggleSave(id) {
   }
   if (!was) {
     const optin = S.profile?.email_opt_in;
-    toast(optin ? "Salvo. O lembrete chega por e-mail às 8h; se não aparecer, olhe em Promoções e Spam." : "Salvo no seu perfil.");
+    const where = S.v4 && S.films.length > 1 ? ` em “${filmOf()?.title}”` : "";
+    toast(optin ? `Salvo${where}. O lembrete chega por e-mail às 8h; se não aparecer, olhe em Promoções e Spam.` : `Salvo${where}.`);
   }
 }
 
@@ -569,13 +595,219 @@ async function startAuth() {
   });
 }
 
+// ——— planejamento por filme ———
+const FILM_KEY = "rdf-filme";
+const PREMIERE_LABEL = { inedito: "inédito", exibido_brasil: "já exibido no Brasil", exibido_exterior: "já exibido fora do Brasil" };
+const filmOf = () => S.films.find((x) => x.id === S.film) || null;
+const rowOf = (fid) => S.rows.find((r) => r.festival_id === fid && (!S.v4 || r.film_id === S.film));
+function rowQuery(q, fid) { q = q.eq("user_id", S.user.id).eq("festival_id", fid); return S.v4 ? q.eq("film_id", S.film) : q; }
+
+function applyFilm() {
+  if (!S.v4) return;
+  let id = null;
+  try { id = localStorage.getItem(FILM_KEY); } catch {}
+  S.film = S.films.some((x) => x.id === id) ? id : S.films[0]?.id || null;
+  const mine = S.rows.filter((r) => r.film_id === S.film);
+  S.saved = new Set(mine.map((r) => r.festival_id));
+  S.track = new Map(mine.map((r) => [r.festival_id, r.status || "quero"]));
+}
+function selectFilm(id) {
+  try { localStorage.setItem(FILM_KEY, id); } catch {}
+  applyFilm(); renderAccount(); update();
+}
+async function ensureFilm() {
+  if (S.film) return true;
+  const { data, error } = await S.sb.from("films").insert({ user_id: S.user.id, title: "Meu filme" }).select("id,title,duration_min,genre,finished_on,premiere_status,country").single();
+  if (error) { console.error(error); return false; }
+  S.films.push(data); S.film = data.id;
+  try { localStorage.setItem(FILM_KEY, data.id); } catch {}
+  return true;
+}
+
+function renderFilms(mine) {
+  const box = $("#films");
+  box.hidden = !(mine && S.v4);
+  if (box.hidden) return;
+  const f = filmOf();
+  const info = f ? [f.duration_min ? `${f.duration_min} min` : "", f.genre || "", PREMIERE_LABEL[f.premiere_status] || "", f.country || ""].filter(Boolean).join(" · ") : "";
+  box.innerHTML = `<span class="kicker">Seus filmes</span>
+    <div class="film-chips">${S.films.map((x) => `<button class="fchip" data-film="${esc(x.id)}" aria-pressed="${x.id === S.film}">${esc(x.title)}</button>`).join("")}<button class="fchip add" id="film-new">+ novo filme</button></div>
+    ${f ? `<p class="film-info">${esc(info)}${!f.duration_min || !f.genre ? `${info ? " · " : ""}<span class="muted">preencha a ficha para ver quais festivais atendem ao filme</span>` : ""} <button class="link-btn" id="film-edit">editar ficha</button></p>` : ""}`;
+}
+
+function openFilm(film) {
+  const f = film || { title: "", duration_min: "", genre: "", finished_on: "", premiere_status: "inedito", country: "Brasil" };
+  $("#fm-title").textContent = film ? "Ficha do filme" : "Novo filme";
+  $("#fm-name").value = f.title || "";
+  $("#fm-dur").value = f.duration_min || "";
+  $("#fm-genre").value = f.genre || "";
+  $("#fm-done").value = (f.finished_on || "").slice(0, 7);
+  $("#fm-prem").value = f.premiere_status || "inedito";
+  $("#fm-country").value = f.country || "Brasil";
+  $("#fm-del").hidden = !film || S.films.length < 2;
+  $("#fm-status").textContent = "";
+  $("#film-dlg").dataset.id = film ? film.id : "";
+  $("#film-dlg").showModal();
+}
+async function saveFilm(e) {
+  e.preventDefault();
+  const id = $("#film-dlg").dataset.id;
+  const body = {
+    title: $("#fm-name").value.trim().slice(0, 200) || "Meu filme",
+    duration_min: parseInt($("#fm-dur").value, 10) || null,
+    genre: $("#fm-genre").value || null,
+    finished_on: $("#fm-done").value ? `${$("#fm-done").value}-01` : null,
+    premiere_status: $("#fm-prem").value,
+    country: $("#fm-country").value.trim().slice(0, 60) || "Brasil",
+  };
+  const cols = "id,title,duration_min,genre,finished_on,premiere_status,country";
+  const res = id
+    ? await S.sb.from("films").update(body).eq("id", id).select(cols).single()
+    : await S.sb.from("films").insert({ user_id: S.user.id, ...body }).select(cols).single();
+  if (res.error) { console.error(res.error); $("#fm-status").textContent = "Não foi possível salvar."; return; }
+  if (id) Object.assign(S.films.find((x) => x.id === id), res.data); else S.films.push(res.data);
+  $("#film-dlg").close();
+  selectFilm(res.data.id);
+}
+async function deleteFilm() {
+  const id = $("#film-dlg").dataset.id;
+  const f = S.films.find((x) => x.id === id);
+  if (!f || !confirm(`Apagar “${f.title}” e os festivais salvos dele? Isso não pode ser desfeito.`)) return;
+  const { error } = await S.sb.from("films").delete().eq("id", id);
+  if (error) { $("#fm-status").textContent = "Não foi possível apagar."; return; }
+  S.films = S.films.filter((x) => x.id !== id);
+  S.rows = S.rows.filter((r) => r.film_id !== id);
+  try { localStorage.removeItem(FILM_KEY); } catch {}
+  $("#film-dlg").close();
+  selectFilm(S.films[0]?.id || "");
+}
+
+// Requisitos do festival × ficha do filme: descreve, sem veredito
+function fitOf(f, film) {
+  if (!film || (!film.duration_min && !film.genre)) return null;
+  const out = [], chk = [];
+  if (film.duration_min && f.maxDuration != null && film.duration_min > f.maxDuration) out.push(`até ${f.maxDuration} min`);
+  if (film.genre && f.genres.length && !f.genres.includes(film.genre) && !(film.genre === "Ficção" && f.genres.includes("Fantástico"))) out.push(`não inclui ${film.genre.toLowerCase()}`);
+  const br = norm(film.country || "") === "brasil";
+  if (br && f.origin && !acceptsBR(f)) out.push(f.restrictions ? f.restrictions.charAt(0).toLowerCase() + f.restrictions.slice(1) : "não aceita filmes brasileiros");
+  if (f.premiere && !noPremiere(f) && film.premiere_status !== "inedito") chk.push(`exige estreia (${f.premiere.charAt(0).toLowerCase() + f.premiere.slice(1)})`);
+  if (f.restrictions && !(br && f.origin && !acceptsBR(f))) chk.push(f.restrictions.charAt(0).toLowerCase() + f.restrictions.slice(1));
+  if (out.length) return { k: "out", t: `Fora dos requisitos: ${out.join("; ")}` };
+  if (chk.length) return { k: "chk", t: `Confira: ${chk.join("; ")}` };
+  return { k: "ok", t: "Dentro dos requisitos" };
+}
+function fitHTML(f) {
+  if (!S.v4) return "";
+  const r = fitOf(f, filmOf());
+  return r ? `<span class="fit fit-${r.k}">${esc(r.t)}</span>` : "";
+}
+
+// Depois de uma seleção, o filme deixa de ser inédito: festivais da lista que pedem ineditismo
+function premiereConflicts(id) {
+  return S.all.filter((x) => x.id !== id && S.saved.has(x.id) && (S.track.get(x.id) || "quero") === "quero" && x.premiere && !noPremiere(x));
+}
+
+const CHECK_DEFAULT = ["Link de visionamento com senha", "Legendas em inglês", "Sinopse e ficha técnica", "Still e cartaz", "Taxa paga", "Confirmação da inscrição", "Cópia de exibição (DCP ou arquivo)", "Material de imprensa"];
+const checklistOf = (r) => (Array.isArray(r?.checklist) ? r.checklist : CHECK_DEFAULT.map((t) => ({ t, d: false })));
+function inscricaoHTML(f) {
+  const r = rowOf(f.id) || {};
+  const list = checklistOf(r);
+  const done = list.filter((x) => x.d).length;
+  const conflicts = r.status === "selecionado" ? premiereConflicts(f.id) : [];
+  return `<section class="insc">
+    ${filmOf() && S.films.length > 1 ? `<span class="kicker">Inscrição de “${esc(filmOf().title)}”</span>` : ""}
+    ${conflicts.length ? `<div class="alert-est"><b>Atenção à estreia</b>Com esta seleção, o filme deixa de ser inédito. Na lista deste filme, ${conflicts.map((x) => esc(x.name)).join(", ")} ${conflicts.length === 1 ? "pede" : "pedem"} ineditismo: confira o regulamento antes de inscrever.</div>` : ""}
+    ${r.status === "selecionado" ? `<label class="award">Prêmio ou menção (opcional)<input id="in-award" maxlength="200" value="${esc(r.award || "")}" placeholder="ex.: Prêmio do júri"></label>` : ""}
+    <span class="kicker">Checklist de materiais · ${done} de ${list.length}</span>
+    <ul class="ck" id="in-ck">${list.map((x, i) => `<li><label><input type="checkbox" data-i="${i}" ${x.d ? "checked" : ""}><span>${esc(x.t)}</span></label><button type="button" class="link-btn ck-del" data-i="${i}" aria-label="Tirar ${esc(x.t)}">×</button></li>`).join("")}</ul>
+    <form class="ck-add" id="in-ck-add"><input id="in-ck-new" maxlength="120" placeholder="Adicionar item" aria-label="Novo item do checklist"><button class="btn ghost">Adicionar</button></form>
+    <label class="kicker" for="in-notes">Notas (só você vê)</label>
+    <textarea id="in-notes" maxlength="4000" rows="4" placeholder="Senha do link enviado, contatos da curadoria, datas importantes…">${esc(r.notes || "")}</textarea>
+    <p class="muted small" id="in-status" aria-live="polite"></p>
+  </section>`;
+}
+async function saveRow(fid, patch) {
+  const r = rowOf(fid);
+  const { error } = await rowQuery(S.sb.from("saved_festivals").update(patch), fid);
+  if (error) { console.error(error); $("#in-status").textContent = "Não foi possível salvar."; return false; }
+  if (r) Object.assign(r, patch);
+  $("#in-status").textContent = "Salvo.";
+  return true;
+}
+function bindInscricao(f) {
+  const r = rowOf(f.id) || {};
+  let list = checklistOf(r).map((x) => ({ ...x }));
+  const save = () => saveRow(f.id, { checklist: list }).then((ok) => ok && refreshDetail(f.id));
+  $("#in-ck").onchange = (e) => { const i = +e.target.dataset.i; if (Number.isInteger(i)) { list[i].d = e.target.checked; save(); } };
+  $("#in-ck").onclick = (e) => { if (e.target.classList.contains("ck-del")) { list.splice(+e.target.dataset.i, 1); save(); } };
+  $("#in-ck-add").onsubmit = (e) => { e.preventDefault(); const t = $("#in-ck-new").value.trim(); if (!t) return; list.push({ t: t.slice(0, 120), d: false }); save(); };
+  $("#in-notes").onchange = (e) => saveRow(f.id, { notes: e.target.value.slice(0, 4000) || null });
+  if ($("#in-award")) $("#in-award").onchange = (e) => saveRow(f.id, { award: e.target.value.trim().slice(0, 200) || null });
+}
+
+// ——— relatório de circulação (página para imprimir ou salvar em PDF) ———
+async function openReport() {
+  await loadFX();
+  const film = filmOf();
+  const list = S.all.filter((f) => S.saved.has(f.id) && (S.track.get(f.id) || "quero") !== "quero")
+    .sort((a, b) => (a.deadline || "9").localeCompare(b.deadline || "9"));
+  const rowsData = list.map((f) => {
+    const st = S.track.get(f.id); const r = rowOf(f.id) || {};
+    const fee = feeFor(f); const v = toBRL(fee.v, fee.c);
+    return { f, st, award: r.award, v, fee };
+  });
+  const sel = rowsData.filter((x) => x.st === "selecionado").length;
+  const prizes = rowsData.filter((x) => x.award).length;
+  const total = rowsData.reduce((n, x) => n + (x.v || 0), 0);
+  const info = film ? [film.genre, film.duration_min ? `${film.duration_min} min` : "", film.country, film.finished_on ? `finalizado em ${fmt(film.finished_on).replace(/^\d+ /, "")}` : ""].filter(Boolean).join(" · ") : "";
+  const today = new Date().toISOString().slice(0, 10);
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório de circulação · ${esc(film?.title || "Meus festivais")}</title>
+<style>body{font-family:Geist,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#0e0e0e;margin:40px auto;max-width:900px;padding:0 24px}
+.k{font-family:"Geist Mono",Menlo,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#62625f}
+h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:40px;margin:6px 0 4px}
+.m{font-family:"Geist Mono",Menlo,monospace;font-size:12px;color:#62625f;margin-bottom:20px}
+.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 22px}.sum div{background:#effcc9;padding:10px 12px}.sum b{display:block;font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:28px}
+table{width:100%;border-collapse:collapse;font-size:14px}th{font-family:"Geist Mono",Menlo,monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#62625f;text-align:left;padding:8px 6px;border-bottom:1px solid #0e0e0e;font-weight:400}td{padding:10px 6px;border-bottom:1px dotted #a9a9a4;vertical-align:top}
+.t{font-family:"Geist Mono",Menlo,monospace;font-size:11px;padding:2px 7px;border:1px solid #0e0e0e;white-space:nowrap}.t.s{background:#c6ff3d;border-color:#c6ff3d}
+.foot{font-size:12px;color:#62625f;margin-top:18px}button{font:inherit;background:#0e0e0e;color:#fff;border:0;border-radius:99px;padding:10px 18px;cursor:pointer;margin-top:18px}
+@media print{button{display:none}body{margin:0}}</style></head><body>
+<div class="k">Radar de Festivais · relatório de circulação</div><h1>${esc(film?.title || "Meus festivais")}</h1>
+<div class="m">${esc(info)}${info ? " · " : ""}gerado em ${fmt(today)}</div>
+<div class="sum"><div><span class="k">Inscrições</span><b>${rowsData.length}</b></div><div><span class="k">Seleções</span><b>${sel}</b></div><div><span class="k">Prêmios</span><b>${prizes}</b></div><div><span class="k">Investido</span><b>${brl.format(total)}</b></div></div>
+${rowsData.length ? `<table><thead><tr><th>Festival</th><th>País</th><th>Prazo</th><th>Resultado</th><th>Custo</th></tr></thead><tbody>${rowsData.map((x) => `<tr><td>${esc(x.f.name)}</td><td>${esc(x.f.country || "")}</td><td>${x.f.deadline ? fmt(x.f.deadline) : ""}</td><td><span class="t${x.st === "selecionado" ? " s" : ""}">${esc(TRACK_LABEL[x.st])}</span>${x.award ? ` ${esc(x.award)}` : ""}</td><td>${x.fee.v === 0 ? "gratuito" : x.v != null ? brl.format(x.v) : ""}</td></tr>`).join("")}</tbody></table>` : `<p>Nenhuma inscrição marcada ainda. Em Meus salvos, marque os festivais como Inscrito, Selecionado ou Não selecionado.</p>`}
+<p class="foot">Custos convertidos para reais pela cotação do dia${FX ? ` (${fmt(FX.date)})` : ""}. Fonte dos dados dos festivais: radardefestivais.com.br.</p>
+<button onclick="print()">Imprimir ou salvar em PDF</button></body></html>`;
+  const w = window.open("", "_blank");
+  if (!w) return toast("Permita janelas pop-up para abrir o relatório.");
+  w.document.open(); w.document.write(html); w.document.close();
+}
+
+// ——— calendário anual (próximos 12 meses dos festivais da lista atual) ———
+function renderCalendar(rows) {
+  const cal = S.view === "cal";
+  $(".tablebox").hidden = cal;
+  $("#calview").hidden = !cal;
+  $$("[data-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === S.view)));
+  if (!cal) return;
+  const now = new Date(); const months = [];
+  for (let i = 0; i < 12; i++) { const d = new Date(now.getFullYear(), now.getMonth() + i, 1); months.push({ y: d.getFullYear(), m: d.getMonth(), items: [] }); }
+  for (const f of rows) {
+    if (!f.deadline || days(f.deadline) < 0) continue;
+    const [y, m] = f.deadline.split("-").map(Number);
+    const box = months.find((x) => x.y === y && x.m === m - 1);
+    if (box) box.items.push(f);
+  }
+  $("#calview").innerHTML = `<div class="cal">${months.map((mo, i) => `<div class="cal-m${i === 0 ? " now" : ""}"><h4>${MESES[mo.m]}${mo.m === 0 || i === 0 ? ` <small>${mo.y}</small>` : ""}</h4>${mo.items.sort((a, b) => a.deadline.localeCompare(b.deadline)).map((f) => `<button type="button" class="cal-i ${f._st.k === "hot" ? "hot" : f.dateStatus === "Confirmada" ? "" : "est"}" data-open="${esc(f.id)}"><i>${f.deadline.slice(8)}</i>${esc(f.name.split(":")[0])}</button>`).join("") || `<span class="muted small">sem prazos</span>`}</div>`).join("")}</div>
+  <p class="muted small">Verde: prazo confirmado nos próximos 30 dias. Cinza: data prevista. Toque em um festival para ver a ficha.</p>`;
+}
+
 // ——— buscas salvas ———
 function renderSearchTools(mine) {
   const btn = $("#save-search");
   const qs = searchParams();
   const existing = S.searches.find((x) => x.params === qs);
-  btn.hidden = !(S.user && S.v3 && qs && !mine);
-  btn.textContent = existing ? "★ Busca salva" : "☆ Salvar esta busca";
+  $("#ss-bar").hidden = !(S.sb && qs && !mine && (!S.user || S.v3));
+  btn.textContent = !S.user ? "☆ Entrar para salvar esta busca" : existing ? "★ Busca salva" : "☆ Salvar esta busca";
   btn.disabled = !!existing;
   const box = $("#searches");
   box.hidden = !(mine && S.v3);
@@ -625,7 +857,8 @@ async function openAgenda() {
     if (error) { console.error(error); return toast("Não foi possível criar sua agenda agora. Tente de novo."); }
     S.profile = { ...(S.profile || {}), calendar_token: token };
   }
-  const https = `${location.origin}/agenda/${token}.ics`;
+  const https = `${location.origin}/agenda/${token}.ics${S.v4 && S.films.length > 1 && S.film ? `?filme=${S.film}` : ""}`;
+  $("#ag-title").textContent = S.v4 && S.films.length > 1 ? `Agenda de “${filmOf()?.title}”` : "Assine sua agenda do Radar";
   $("#ag-url").value = https;
   $("#ag-apple").href = https.replace(/^https?:/, "webcal:");
   $("#ag-status").textContent = "";
@@ -671,7 +904,8 @@ function openDetail(id) {
   add("Última verificação", f.checkedAt ? fmt(f.checkedAt) : "");
   $("#dt-where").textContent = f.scope === "BR" ? "Brasil" : f.country || "";
   $("#dt-title").textContent = f.name;
-  $("#dt-body").innerHTML = `<dl class="dl">${rows.join("")}</dl>`;
+  $("#dt-body").innerHTML = `<dl class="dl">${rows.join("")}</dl>${S.v4 && S.saved.has(id) ? inscricaoHTML(f) : ""}`;
+  if (S.v4 && S.saved.has(id)) bindInscricao(f);
 
   const saved = S.saved.has(id);
   const acts = [];
@@ -699,7 +933,9 @@ async function setTrack(id, status) {
   const prev = S.track.get(id);
   S.track.set(id, status);
   renderTable();
-  const { error } = await S.sb.from("saved_festivals").update({ status }).eq("user_id", S.user.id).eq("festival_id", id);
+  const { error } = await rowQuery(S.sb.from("saved_festivals").update({ status }), id);
+  if (!error) { const r = rowOf(id); if (r) r.status = status; }
+  if (!error && status === "selecionado" && S.v4) { refreshDetail(id); const c = premiereConflicts(id); if (c.length) return toast(`Atenção à estreia: ${c.map((x) => x.name).join(", ")} ${c.length === 1 ? "pede" : "pedem"} ineditismo. Confira os regulamentos.`); }
   if (error) {
     console.error(error);
     S.track.set(id, prev);
@@ -799,6 +1035,16 @@ function bind() {
   };
   $("#mine-prefs").onclick = () => openProfile();
   $("#mine-cal").onclick = openAgenda;
+  $("#mine-report").onclick = openReport;
+  $("#films").onclick = (e) => {
+    const b = e.target.closest("[data-film]"); if (b) return selectFilm(b.dataset.film);
+    if (e.target.id === "film-new") return openFilm(null);
+    if (e.target.id === "film-edit") return openFilm(filmOf());
+  };
+  $("#film-form").onsubmit = saveFilm;
+  $("#fm-del").onclick = deleteFilm;
+  $$("[data-view]").forEach((b) => (b.onclick = () => { S.view = b.dataset.view; renderTable(); }));
+  $("#calview").onclick = (e) => { const c = e.target.closest("[data-open]"); if (c) openDetail(c.dataset.open); };
   $("#save-search").onclick = saveSearch;
   $("#searches-list").onclick = searchAction;
   $("#searches-list").onchange = searchAction;

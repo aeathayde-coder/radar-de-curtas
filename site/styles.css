@@ -528,3 +528,51 @@ td .loc .chk{display:block;margin-top:4px;font-family:var(--f-mono);font-size:11
 td.notes .flag.gen{border-style:dotted;white-space:normal;max-width:100%}
 #dt-share svg{vertical-align:-2px;margin-right:2px}
 .topbar .btn{white-space:nowrap}
+
+/* planejamento por filme */
+.mine-bar .films{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;padding-bottom:12px;border-bottom:1px dotted var(--muted)}
+.film-chips{display:flex;flex-wrap:wrap;gap:8px}
+.fchip{font:inherit;font-size:14px;border:1px solid var(--muted);background:transparent;color:var(--fg);border-radius:99px;padding:7px 14px;cursor:pointer}
+.fchip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.fchip.add{border-style:dashed;color:var(--muted)}
+.film-info{margin:0;font-family:var(--f-mono);font-size:12px;color:var(--fg)}
+.fit{display:block;margin-top:6px;font-family:var(--f-mono);font-size:11px;padding:2px 7px;width:fit-content;max-width:100%;border:1px solid}
+.fit-ok{color:#1e7a46;border-color:#1e7a46}
+.fit-chk{color:#8a5a00;border-color:#c90}
+.fit-out{color:#c22;border-color:#d33}
+.fld{display:flex;flex-direction:column;gap:4px;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 0 0;flex:1}
+.fld input,.fld select{font:inherit;font-family:var(--f-sans,inherit);font-size:15px;text-transform:none;letter-spacing:0;color:var(--fg);background:var(--bg);border:1px solid var(--muted);padding:9px 10px;border-radius:4px}
+.fld-row{display:flex;gap:12px;flex-wrap:wrap}
+/* inscrição: checklist, notas, prêmio */
+.insc{border-top:1px solid var(--fg);margin-top:18px;padding-top:14px;display:flex;flex-direction:column;gap:8px}
+.alert-est{border:1px solid #c90;background:#fff8e6;color:#3a2a00;padding:10px 12px;font-size:14px}
+.alert-est b{display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a5a00;margin-bottom:3px}
+.insc .ck{list-style:none;padding:0;margin:0;border-top:1px dotted var(--muted)}
+.insc .ck li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dotted var(--muted);font-size:14.5px}
+.insc .ck label{display:flex;gap:10px;align-items:center;cursor:pointer}
+.insc .ck input:checked+span{color:var(--muted);text-decoration:line-through}
+.ck-add{display:flex;gap:8px}
+.ck-add input,.insc textarea,.award input{font:inherit;font-size:14.5px;color:var(--fg);background:var(--bg);border:1px solid var(--muted);padding:8px 10px;border-radius:4px;flex:1;min-width:0}
+.insc textarea{resize:vertical;width:100%;box-sizing:border-box}
+.award{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+/* busca salva: barra visível */
+.ss-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;background:var(--neon-soft);border:1px dotted var(--fg);border-radius:4px;padding:10px 14px;margin:0 0 14px;font-size:14px}
+.ss-bar[hidden]{display:none}
+/* lista × calendário */
+.viewtog{display:inline-flex;border:1px solid var(--muted);border-radius:99px;overflow:hidden;margin-left:12px}
+.viewtog button{font:inherit;font-size:13px;background:transparent;color:var(--fg);border:0;padding:6px 12px;cursor:pointer}
+.viewtog button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+#calview .cal{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--fg);border-left:1px dotted var(--muted)}
+.cal-m{border-right:1px dotted var(--muted);border-bottom:1px dotted var(--muted);padding:10px 12px;min-height:110px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.cal-m.now{background:var(--neon-soft)}
+.cal-m h4{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin:0 0 4px}
+.cal-m h4 small{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.cal-i{all:unset;cursor:pointer;font-size:13px;line-height:1.35}
+.cal-i i{font-style:normal;font-family:var(--f-mono);font-size:11px;color:var(--muted);margin-right:5px}
+.cal-i.hot{background:var(--neon);color:#0e0e0e;padding:0 4px}
+.cal-i.est{color:var(--muted)}
+.cal-i:hover{text-decoration:underline}
+@media (max-width:700px){#calview .cal{grid-template-columns:repeat(2,minmax(0,1fr))}.viewtog{margin-left:0}}
+.mine-bar{grid-template-columns:minmax(0,1fr)}
+.mine-bar .mine-acts{justify-content:flex-start}
+.insc .ck input{accent-color:#0e0e0e;width:16px;height:16px}
