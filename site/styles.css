@@ -604,3 +604,4 @@ td.notes .flag.gen{border-style:dotted;white-space:normal;max-width:100%}
 .btn.done{background:var(--neon);color:var(--on-neon);border-color:var(--fg)}
 dialog .toast{position:fixed;z-index:5}
 .dl dd a{color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+.fp-dl dd a{color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
