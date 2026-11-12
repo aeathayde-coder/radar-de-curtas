@@ -63,7 +63,7 @@ export function page(f, all, shell, today = new Date().toISOString().slice(0, 10
   add("Temas", esc(f.themes.join(", ")));
   add("Prêmios e benefícios", esc(f.benefit));
   add("Observações", esc(f.notes));
-  if (!f.rulesUrl) add("Regulamento", "Confira no site oficial.");
+  if (!f.rulesUrl) add("Regulamento", f.url ? `Confira no <a href="${esc(f.url)}" target="_blank" rel="noopener">site oficial ↗</a>.` : "Confira no site oficial.");
 
   const acts = [
     f.url ? `<a class="btn" href="${esc(f.url)}" target="_blank" rel="noopener">Página de inscrição ↗</a>` : "",

@@ -1061,7 +1061,7 @@ function openDetail(id) {
   add("Inscrição", esc(f.fee));
   add("Prêmios e benefícios", esc(f.benefit));
   add("Observações", esc(f.notes));
-  if (!f.rulesUrl) add("Regulamento", "Confira no site oficial.");
+  if (!f.rulesUrl) add("Regulamento", f.url ? `Confira no <a href="${esc(f.url)}" target="_blank" rel="noopener">site oficial ↗</a>.` : "Confira no site oficial.");
   add("Última verificação", f.checkedAt ? fmt(f.checkedAt) : "");
   $("#dt-where").textContent = f.scope === "BR" ? "Brasil" : f.country || "";
   $("#dt-title").textContent = f.name;
