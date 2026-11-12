@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Protótipo · Equipe do projeto · Radar de Festivais</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.proto{background:var(--fg);color:var(--bg);font-size:13px;padding:10px 16px;text-align:center}
+.proto b{color:var(--neon)}
+.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 80px;display:flex;flex-direction:column;gap:22px}
+.wrap h1{font-family:var(--f-display);font-weight:400;font-size:clamp(44px,6vw,72px);margin:0;line-height:1}
+.viewas{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}
+.film-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.team-line{display:flex;align-items:center;gap:8px;font-size:13px}
+.avs{display:flex}
+.avs span{width:28px;height:28px;border-radius:50%;border:1px solid var(--fg);background:var(--surface);display:grid;place-items:center;font-size:11px;font-weight:500;margin-left:-6px}
+.avs span:first-child{margin-left:0}
+.avs span.me{background:var(--neon);color:var(--on-neon)}
+.btn.team{background:var(--neon);color:var(--on-neon);border-color:var(--fg)}
+.btn.team:hover{background:var(--fg);color:var(--bg)}
+.rows{border-top:1px solid var(--fg)}
+.frow{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:16px;align-items:center;width:100%;padding:16px 4px;border-bottom:1px dotted var(--dot)}
+.frow:hover{background:var(--neon-soft)}
+.frow b{font-family:var(--f-display);font-weight:400;font-size:24px}
+.frow small{display:block;font-family:var(--f-mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.st{font-size:12.5px;border:1px solid var(--fg);border-radius:99px;padding:4px 11px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--fg);border-radius:999px;overflow:hidden}
+.seg label{position:relative;text-align:center;font-size:14px;padding:9px 10px;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg label:has(input:checked){background:var(--fg);color:var(--bg)}
+.seg-help{font-size:12.5px;color:var(--muted);margin:-4px 0 0}
+.mem{display:flex;flex-direction:column}
+.mrow{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px dotted var(--dot);font-size:14px}
+.mrow .av{width:32px;height:32px;border-radius:50%;border:1px solid var(--fg);display:grid;place-items:center;font-size:11px;font-weight:500}
+.mrow .av.me{background:var(--neon);color:var(--on-neon)}
+.mrow small{display:block;color:var(--muted);font-size:12.5px}
+.mrow select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--fg);border-radius:999px;background:var(--surface);color:var(--fg)}
+.role{font-size:12.5px;border:1px solid var(--line);border-radius:99px;padding:4px 10px;color:var(--muted)}
+.note{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:start;padding:12px 0;border-top:1px dotted var(--dot);font-size:14.5px}
+.note .who{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.sw{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.sw input{appearance:none;width:34px;height:20px;border-radius:99px;border:1px solid var(--fg);background:var(--surface);position:relative;cursor:pointer;margin:0}
+.sw input::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--fg);transition:left .15s}
+.sw input:checked{background:var(--neon)}
+.sw input:checked::after{left:16px}
+.ico{width:18px;height:18px}
+.ro-msg{font-size:13px;background:var(--neon-soft);border:1px dotted var(--fg);border-radius:4px;padding:8px 12px}
+.newnote{display:flex;gap:8px}
+.newnote input{flex:1;font:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--fg);border-radius:999px;background:var(--surface);color:var(--fg)}
+.fld input[type=email]{font:inherit}
+[data-ro="1"] .edit-only{display:none}
+</style>
+</head>
+<body>
+<div class="proto"><b>Protótipo.</b> Nada aqui é salvo nem enviado. Serve para testar como fica a equipe do projeto antes de desenvolver.</div>
+<nav class="topbar" aria-label="Principal"><div class="tb-in">
+  <a class="brand" href="/">Radar de <em>Festivais</em><i class="mark" aria-hidden="true"></i></a>
+  <div class="tb-r"><span class="navlink">Meus salvos</span></div>
+</div></nav>
+
+<main class="wrap" id="app" data-ro="0">
+  <div>
+    <span class="eyebrow">Meus salvos</span>
+    <h1>Seus <em>projetos</em></h1>
+  </div>
+
+  <div class="viewas" role="group" aria-label="Ver a página como">
+    <span class="muted">Ver como</span>
+    <button class="fchip" data-as="ana" aria-pressed="true">Ana, criadora</button>
+    <button class="fchip" data-as="felipe" aria-pressed="false">Felipe, editor</button>
+    <button class="fchip" data-as="maisa" aria-pressed="false">Maísa, apenas visualização</button>
+  </div>
+
+  <div class="mine-bar">
+    <div class="films">
+      <div class="film-chips">
+        <button class="fchip" aria-pressed="false">Para acompanhar</button>
+        <button class="fchip" aria-pressed="true">Cuidado com o que deseja</button>
+        <button class="fchip add edit-only" type="button">+ novo projeto</button>
+      </div>
+      <div class="film-head">
+        <p class="film-info">14 min · Ficção · Brasil · inédito <button class="link-btn edit-only" type="button" id="edit-film">editar ou apagar</button></p>
+        <div class="team-line">
+          <span class="avs" id="avs"></span>
+          <span id="team-txt" class="muted"></span>
+          <button class="btn team" type="button" id="open-team">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/></svg>
+            <span id="team-btn-txt">Convidar equipe</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <p id="ro-banner" class="ro-msg" hidden>Você vê este projeto no modo apenas visualização. Suas notas privadas continuam só suas.</p>
+  </div>
+
+  <div class="rows" id="rows"></div>
+</main>
+
+<dialog id="team" aria-labelledby="tm-title">
+  <form method="dialog" class="dlg">
+    <span class="kicker">Equipe do projeto</span>
+    <h2 id="tm-title">Cuidado com o que deseja</h2>
+    <p class="muted small">Quem você convidar vê este projeto em Meus salvos, com os mesmos festivais, situações e checklist. As notas continuam privadas, a não ser as que cada pessoa escolher compartilhar.</p>
+    <div class="edit-owner">
+      <label class="fld">E-mail de quem vai participar<input type="email" id="tm-email" placeholder="nome@email.com" autocomplete="off"></label>
+      <div class="seg" role="radiogroup" aria-label="Perfil" style="margin-top:10px">
+        <label><input type="radio" name="role" value="editor" checked>Editor</label>
+        <label><input type="radio" name="role" value="leitor">Apenas visualização</label>
+      </div>
+      <p class="seg-help" id="role-help" style="margin-top:8px">Editor inclui e tira festivais, muda a situação e marca o checklist.</p>
+      <button type="button" class="btn" id="tm-send" style="margin-top:12px">Enviar convite</button>
+      <p class="muted small" id="tm-status" aria-live="polite"></p>
+    </div>
+    <div class="mem" id="mem"></div>
+    <div class="dlg-actions"><button type="button" class="link-btn" id="tm-leave" hidden>Sair deste projeto</button><button value="close" class="btn ghost">Fechar</button></div>
+  </form>
+</dialog>
+
+<dialog id="prefs" aria-labelledby="pr-title">
+  <form method="dialog" class="dlg">
+    <span class="kicker">Convite aceito</span>
+    <h2 id="pr-title">Que e-mails você quer receber deste projeto?</h2>
+    <p class="muted small">No site, você tem acesso ao projeto conforme o seu perfil. Os e-mails são só seus, e dá para mudar depois em Seu perfil.</p>
+    <label class="check"><input type="checkbox" checked><span>Lembretes de prazo dos festivais do projeto</span></label>
+    <label class="check"><input type="checkbox" checked><span>Mudanças nos festivais do projeto (data confirmada, prazo ou taxa alterados)</span></label>
+    <label class="check"><input type="checkbox"><span>Atividade da equipe (festival incluído ou retirado, situação alterada), num resumo semanal</span></label>
+    <div class="dlg-actions"><span></span><button value="close" class="btn">Salvar e abrir o projeto</button></div>
+  </form>
+</dialog>
+
+<dialog id="detail" aria-labelledby="dt-title">
+  <div class="dlg wide">
+    <div class="dt-head">
+      <div><div class="eyebrow" id="dt-where"></div><h2 id="dt-title"></h2></div>
+      <button type="button" class="link-btn" id="dt-close">Fechar</button>
+    </div>
+    <dl class="dl" id="dt-dl"></dl>
+    <div>
+      <span class="eyebrow">Notas</span>
+      <div id="notes"></div>
+      <div class="newnote" style="margin-top:10px"><input id="nn" placeholder="Escreva uma nota"><button class="btn ghost" type="button" id="nn-add">Adicionar</button></div>
+      <p class="muted small" style="margin-top:8px">Notas novas começam privadas. Ligue o botão para a equipe ver.</p>
+    </div>
+    <div class="dt-actions">
+      <select id="dt-status" class="edit-only" aria-label="Situação"><option>Quero inscrever</option><option>Inscrito</option><option>Selecionado</option><option>Não selecionado</option></select>
+      <span class="muted small" id="dt-status-ro" hidden></span>
+      <button class="btn ghost" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3.5"/><path d="m7.5 8 4.5-4.5L16.5 8"/><path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5"/></svg>
+        Compartilhar link do festival
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const people = {
+  ana: { n: "Ana Elisa", i: "AE", role: "criadora" },
+  felipe: { n: "Felipe Monteiro", i: "FM", role: "editor" },
+  maisa: { n: "Maísa Fontes", i: "MF", role: "leitor" },
+};
+let me = "ana";
+let members = [
+  { id: "ana", st: "ok" },
+  { id: "felipe", st: "ok" },
+  { id: "maisa", st: "ok" },
+];
+const fests = [
+  { id: "kinoforum", n: "Kinoforum", where: "São Paulo / SP", dl: "Inscrições até 15 mai 2027", st: "Quero inscrever",
+    notes: [
+      { by: "ana", t: "Mandar a versão com legenda em inglês.", sh: true },
+      { by: "ana", t: "Login do FilmFreeway e senha no gerenciador.", sh: false },
+      { by: "felipe", t: "Falar com a distribuidora antes de inscrever.", sh: true },
+    ] },
+  { id: "clermont", n: "Clermont-Ferrand", where: "Clermont-Ferrand, França", dl: "Inscrições até 24 set 2027 (previsto)", st: "Quero inscrever",
+    notes: [{ by: "maisa", t: "Ver se aceitam cópia de trabalho na inscrição.", sh: true }] },
+];
+const roleTxt = { criadora: "Criadora", editor: "Editor", leitor: "Apenas visualização" };
+const ro = () => people[me].role === "leitor";
+const owner = () => people[me].role === "criadora";
+
+function toast(t) { const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 2600); }
+
+function renderTop() {
+  $("#app").dataset.ro = ro() ? "1" : "0";
+  $("#ro-banner").hidden = !ro();
+  $("#avs").innerHTML = members.filter((m) => m.st === "ok").map((m) => `<span class="${m.id === me ? "me" : ""}" title="${people[m.id].n}">${people[m.id].i}</span>`).join("");
+  const n = members.filter((m) => m.st === "ok").length;
+  $("#team-txt").textContent = n > 1 ? `${n} pessoas` : "só você";
+  $("#team-btn-txt").textContent = owner() ? "Convidar equipe" : "Ver equipe";
+  renderRows();
+}
+function renderRows() {
+  $("#rows").innerHTML = fests.map((f) => {
+    const shared = f.notes.filter((x) => x.sh).length;
+    return `<button class="frow" data-f="${f.id}"><span><small>${f.where}</small><b>${f.n}</b><small>${f.dl}</small></span><span class="muted small">${shared} nota${shared === 1 ? "" : "s"} da equipe</span><span class="st">${f.st}</span></button>`;
+  }).join("");
+  document.querySelectorAll(".frow").forEach((b) => (b.onclick = () => openDetail(b.dataset.f)));
+}
+function renderTeam() {
+  document.querySelector(".edit-owner").hidden = !owner();
+  $("#tm-leave").hidden = owner();
+  $("#mem").innerHTML = members.map((m) => {
+    const p = people[m.id] || { n: m.email, i: m.email.slice(0, 2).toUpperCase(), role: m.role };
+    const sub = m.st === "pend" ? "convite enviado, aguardando" : m.id === me ? "você" : "";
+    let right = `<span class="role">${roleTxt[p.role]}</span>`;
+    if (owner() && p.role !== "criadora") {
+      right = `<select data-m="${m.id}" aria-label="Perfil de ${p.n}"><option value="editor"${p.role === "editor" ? " selected" : ""}>Editor</option><option value="leitor"${p.role === "leitor" ? " selected" : ""}>Apenas visualização</option><option value="x">Remover do projeto</option></select>`;
+    }
+    return `<div class="mrow"><span class="av ${m.id === me ? "me" : ""}">${p.i}</span><span>${p.n}<small>${sub}</small></span>${right}</div>`;
+  }).join("");
+  document.querySelectorAll("#mem select").forEach((s) => (s.onchange = () => {
+    const id = s.dataset.m;
+    if (s.value === "x") { members = members.filter((m) => m.id !== id); toast("Pessoa removida do projeto"); }
+    else { (people[id] || members.find((m) => m.id === id)).role = s.value; toast("Perfil alterado"); }
+    renderTeam(); renderTop();
+  }));
+}
+$("#open-team").onclick = () => { renderTeam(); $("#team").showModal(); };
+document.querySelectorAll('input[name=role]').forEach((r) => (r.onchange = () => {
+  $("#role-help").textContent = r.value === "editor"
+    ? "Editor inclui e tira festivais, muda a situação e marca o checklist."
+    : "Apenas visualização vê festivais, situações e notas compartilhadas, sem alterar nada.";
+}));
+$("#tm-send").onclick = () => {
+  const e = $("#tm-email").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) { $("#tm-status").textContent = "Digite um e-mail válido."; return; }
+  const role = document.querySelector('input[name=role]:checked').value;
+  const id = "p" + Date.now();
+  people[id] = { n: e, i: e.slice(0, 2).toUpperCase(), role };
+  members.push({ id, st: "pend" });
+  $("#tm-email").value = ""; $("#tm-status").textContent = "";
+  renderTeam(); toast("Convite enviado para " + e);
+};
+$("#tm-leave").onclick = () => toast("No site real, você sairia do projeto aqui.");
+
+function openDetail(id) {
+  const f = fests.find((x) => x.id === id);
+  $("#dt-where").textContent = f.where;
+  $("#dt-title").textContent = f.n;
+  $("#dt-dl").innerHTML = `<dt>Prazo</dt><dd>${f.dl}</dd><dt>Projeto</dt><dd>Cuidado com o que deseja</dd>`;
+  $("#dt-status").value = f.st;
+  $("#dt-status").onchange = (e) => { f.st = e.target.value; renderRows(); toast("Situação alterada para toda a equipe"); };
+  $("#dt-status-ro").hidden = !ro();
+  $("#dt-status-ro").textContent = "Situação · " + f.st;
+  $("#dt-status").hidden = ro();
+  const draw = () => {
+    const vis = f.notes.filter((x) => x.by === me || x.sh);
+    $("#notes").innerHTML = vis.map((x, i) => {
+      const mine = x.by === me;
+      const lock = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
+      const team = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.8 0 4.9 2 5.5 5"/></svg>`;
+      const who = mine ? (x.sh ? "sua nota, a equipe vê" : "sua nota, só você vê") : `nota de ${people[x.by].n}`;
+      const ctl = mine ? `<label class="sw"><input type="checkbox" data-i="${f.notes.indexOf(x)}"${x.sh ? " checked" : ""}>Equipe vê</label>` : "";
+      return `<div class="note">${x.sh ? team : lock}<span>${x.t}<span class="who">${who}</span></span>${ctl}</div>`;
+    }).join("") || `<p class="muted small">Nenhuma nota ainda.</p>`;
+    document.querySelectorAll("#notes input").forEach((c) => (c.onchange = () => {
+      f.notes[+c.dataset.i].sh = c.checked; draw(); renderRows();
+      toast(c.checked ? "A equipe agora vê esta nota" : "Nota voltou a ser só sua");
+    }));
+  };
+  draw();
+  $("#nn-add").onclick = () => { const t = $("#nn").value.trim(); if (!t) return; f.notes.push({ by: me, t, sh: false }); $("#nn").value = ""; draw(); };
+  $("#detail").showModal();
+}
+$("#dt-close").onclick = () => $("#detail").close();
+$("#edit-film").onclick = () => toast("Abre a ficha do projeto, como hoje.");
+
+document.querySelectorAll("[data-as]").forEach((b) => (b.onclick = () => {
+  document.querySelectorAll("[data-as]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  me = b.dataset.as; renderTop();
+  if (me !== "ana") $("#prefs").showModal();
+}));
+renderTop();
+</script>
+</body>
+</html>
