@@ -656,7 +656,7 @@ async function saveInFilm(id, filmId, on) {
   else S.rows = S.rows.filter((r) => !(r.festival_id === id && r.film_id === filmId));
   applyFilm(); renderTable(); renderAccount(); refreshDetail(id);
   const t = S.films.find((x) => x.id === filmId)?.title;
-  toast(on ? `Salvo em “${t}”.` : `Tirado de “${t}”.`);
+  toast(on ? `Salvo em “${t}”.` : `Removido de “${t}”.`);
   return true;
 }
 

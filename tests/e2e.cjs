@@ -125,7 +125,7 @@ export function createClient() {
   // com um projeto só, tocar de novo na estrela tira direto
   await a.click("#tb tr:nth-child(5) .star");
   await a.waitForTimeout(150);
-  console.log("tirou direto:", await a.textContent("#toast"));
+  console.log("removeu direto:", await a.textContent("#toast"));
   await a.click("#tb tr:nth-child(5) .star");
   await a.waitForSelector("#savein[open] #si-list input");
   await a.check("#si-list input >> nth=0");
