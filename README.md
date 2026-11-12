@@ -69,6 +69,9 @@ Rode também `supabase/migracao-3-avisos-agenda-buscas.sql`. Ela libera três re
 - **Buscas salvas:** com filtros ativos, "Salvar esta busca" guarda os filtros; no e-mail de quarta entram os festivais novos que combinam com cada busca.
 Sem essa migração, o site funciona como antes, sem esses botões. A primeira execução da função `novidades` só tira a "foto" da base; os avisos começam a partir da segunda.
 
+### 1c. Supabase: equipe do projeto
+Rode `supabase/migracao-5-equipe.sql` no SQL Editor, depois da migração 4. Ela libera o botão *Convidar equipe* em cada projeto: convites por e-mail com perfil *Editor* ou *Apenas visualização*, avisos por pessoa em cada projeto, notas privadas ou compartilhadas e o resumo semanal da atividade da equipe. Não apaga nada; as notas antigas viram notas privadas da dona. Sem essa migração, o site funciona como antes.
+
 ### 2. Resend: e-mails
 1. Crie uma conta em https://resend.com → **API Keys** → crie uma chave com permissão *Sending access* (`RESEND_API_KEY`).
 2. **Limite importante:** sem domínio próprio verificado, o Resend só envia de `onboarding@resend.dev` **para o e-mail da sua própria conta Resend**. Não é possível verificar um subdomínio `*.netlify.app`. Os lembretes para outras pessoas só começam a funcionar quando houver um domínio próprio. Depois de verificar o domínio em **Domains**, troque `RESEND_FROM` por, por exemplo, `Radar de Curtas <lembretes@seudominio.com.br>`.

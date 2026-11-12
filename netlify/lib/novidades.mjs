@@ -1,6 +1,7 @@
 // Novidades semanais: mudanças nos festivais salvos e festivais novos que combinam com buscas salvas.
 import { matchesParams, describeParams } from "../../site/filtros.js";
 import { fmtDate } from "./reminders.mjs";
+import { activityHTML, activityText } from "./equipe.mjs";
 
 // prev: Map festival_id → { deadline, date_status } (foto da base na última execução)
 // Devolve as mudanças a registrar. Sem foto anterior (primeira execução), só cria a foto.
@@ -69,10 +70,12 @@ export function selectDigest({ changes, festivals, saved, searches, sent = new S
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-export function buildDigest({ changes, searches, siteUrl, unsubscribeUrl }) {
+export function buildDigest({ changes, searches, activity = [], siteUrl, unsubscribeUrl }) {
   const nNew = searches.reduce((n, s) => n + s.festivals.length, 0);
   const subject =
-    changes.length && nNew
+    !changes.length && !nNew && activity.length
+      ? activity.length === 1 ? `Equipe: ${activity[0].who} ${activity[0].what} ${activity[0].festival}` : `Equipe: ${activity.length} atualizações nos seus projetos`
+      : changes.length && nNew
       ? `Novidades: ${changes.length} ${changes.length === 1 ? "festival salvo mudou" : "festivais salvos mudaram"} e ${nNew} ${nNew === 1 ? "festival novo" : "festivais novos"} para suas buscas`
       : changes.length
         ? changes.length === 1 ? `${changes[0].festival.name}: prazo ${changes[0].kind === "confirmada" ? "confirmado" : "alterado"}` : `${changes.length} festivais que você salvou mudaram`
@@ -115,7 +118,9 @@ export function buildDigest({ changes, searches, siteUrl, unsubscribeUrl }) {
   const intro = [
     changes.length ? (changes.length === 1 ? "Um festival da sua lista teve novidade esta semana." : `${changes.length} festivais da sua lista tiveram novidades esta semana.`) : "",
     nNew ? (nNew === 1 ? "Entrou no Radar um festival que combina com uma busca que você salvou." : `Entraram no Radar ${nNew} festivais que combinam com buscas que você salvou.`) : "",
+    activity.length ? "Veja também o que a equipe fez nos seus projetos." : "",
   ].filter(Boolean).join(" ");
+  const actRows = activity.length ? activityHTML(activity, { INK, MUTED, SANS }) : "";
 
   const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(subject)}</title></head>
 <body style="margin:0;background:${PAPER};padding:24px 12px">
@@ -126,7 +131,7 @@ export function buildDigest({ changes, searches, siteUrl, unsubscribeUrl }) {
       <div style="font-family:${MONO};font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#a3a39e;margin-top:6px">Novidades da semana</div>
     </td></tr>
     <tr><td style="padding:24px 28px 6px;font-family:${SANS};font-size:15px;color:${INK};line-height:1.5">${intro}</td></tr>
-    <tr><td style="padding:0 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${changeRows}${searchBlocks}</table></td></tr>
+    <tr><td style="padding:0 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${changeRows}${searchBlocks}${actRows}</table></td></tr>
     <tr><td style="padding:20px 28px 26px;font-family:${SANS};font-size:13px;color:${MUTED};line-height:1.6">
       Antes de inscrever, confira o regulamento oficial: regras de estreia e duração mudam entre edições.<br><br>
       <a href="${esc(siteUrl)}" style="color:${INK};text-decoration:underline">Abrir o Radar de Festivais</a> para ajustar seus avisos e buscas salvas.
@@ -140,6 +145,7 @@ export function buildDigest({ changes, searches, siteUrl, unsubscribeUrl }) {
   const text = [
     intro,
     ...changes.map((c) => `${c.festival.name}: ${c.kind === "confirmada" ? "data confirmada" : "prazo mudou"}, inscrições até ${fmtDate(c.after)}${c.before ? ` (antes: ${fmtDate(c.before)})` : ""}${c.festival.url ? `\n${c.festival.url}` : ""}`),
+    ...(activity.length ? [activityText(activity)] : []),
     ...searches.map((s) => `Para a busca ${s.label}:\n` + s.festivals.map((f) => `${f.name}${f.deadline ? `: inscrições até ${fmtDate(f.deadline)}` : ""}\n${page(f)}`).join("\n")),
     `Antes de inscrever, confira o regulamento oficial.\n${siteUrl}\nParar de receber: ${unsubscribeUrl}`,
   ].join("\n\n");

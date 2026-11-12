@@ -617,3 +617,47 @@ dialog .toast{position:fixed;z-index:5}
 @media (max-width:720px){
   .adv:not([hidden]){grid-template-columns:1fr;grid-template-areas:"gen" "qual" "theme" "fields" "checks" "clear"}
 }
+
+/* equipe do projeto */
+.ico{width:16px;height:16px;flex:none}
+.btn.team{background:var(--neon);color:var(--on-neon);border-color:var(--fg)}
+.btn.team:hover{background:var(--fg);color:var(--bg)}
+.film-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.fchip.shared{display:inline-flex;align-items:center;gap:6px}
+.fchip.shared .ico{width:14px;height:14px}
+.inv-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;background:var(--surface);border:1px solid var(--fg);border-radius:4px;padding:10px 14px;font-size:14px;box-shadow:4px 4px 0 var(--neon)}
+.inv-bar span{flex:1;min-width:200px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--fg);border-radius:999px;overflow:hidden;margin-top:10px}
+.seg label{position:relative;text-align:center;font-size:14px;padding:9px 10px;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg label:has(input:checked){background:var(--fg);color:var(--bg)}
+.seg label:has(input:focus-visible){outline:2px solid var(--fg);outline-offset:-4px}
+.seg-help{font-size:12.5px;color:var(--muted);margin:8px 0 12px}
+.mem{display:flex;flex-direction:column}
+.mrow{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px dotted var(--dot);font-size:14px}
+.mrow .av{width:32px;height:32px;border-radius:50%;border:1px solid var(--fg);display:grid;place-items:center;font-size:11px;font-weight:500}
+.mrow .av.me{background:var(--neon);color:var(--on-neon)}
+.mrow .mname{overflow-wrap:anywhere}
+.mrow small{display:block;color:var(--muted);font-size:12.5px}
+.mrow select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--fg);border-radius:999px;background:var(--surface);color:var(--fg);max-width:190px}
+.role{font-size:12.5px;border:1px solid var(--line);border-radius:99px;padding:4px 10px;color:var(--muted);white-space:nowrap}
+.tm-prefs{border:0;border-top:1px dotted var(--dot);padding:12px 0 0;margin:0;display:flex;flex-direction:column;gap:8px}
+.tm-prefs legend{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 0 6px}
+.iv-err{font-size:13.5px;background:var(--hot-soft);border:1px solid var(--hot);border-radius:4px;padding:10px 12px}
+.ro-msg{font-size:13px;background:var(--neon-soft);border:1px dotted var(--fg);border-radius:4px;padding:8px 12px;margin:0}
+.nt-list{list-style:none;margin:0;padding:0}
+.nt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;border-top:1px dotted var(--dot);font-size:14.5px}
+.nt:first-child{border-top:0}
+.nt-body p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.nt-body small{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.nt-acts{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;justify-content:flex-end}
+.nt-acts .link-btn{font-size:12.5px;color:var(--muted)}
+.nt-edit{width:100%;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--fg);border-radius:4px;background:var(--surface);color:var(--fg)}
+.nt-add{display:flex;gap:8px;align-items:flex-end;margin-top:8px}
+.nt-add textarea{flex:1;font:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--fg);border-radius:4px;background:var(--surface);color:var(--fg);resize:vertical}
+.vis{font:inherit;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--fg);border-radius:999px;padding:4px 10px;background:var(--surface);color:var(--fg);cursor:pointer;white-space:nowrap}
+.vis.on{background:var(--neon);color:var(--on-neon)}
+.vis .ico{width:14px;height:14px}
+@media (max-width:520px){.nt{grid-template-columns:auto minmax(0,1fr)}.nt-acts{grid-column:2;justify-content:flex-start}.nt-add{flex-direction:column;align-items:stretch}}
+.tm-prefs[hidden],.inv-bar[hidden],#tm-invite[hidden]{display:none}
+.check[hidden]{display:none}

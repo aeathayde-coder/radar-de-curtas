@@ -466,7 +466,7 @@ function renderAccount() {
 function login() {
   S.sb.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: location.origin + location.pathname + location.search },
+    options: { redirectTo: location.origin + location.pathname + (INVITE_ID ? `?convite=${INVITE_ID}` : location.search) },
   });
 }
 
@@ -495,6 +495,7 @@ async function loadUserData() {
       if (!rows.error) {
         S.v4 = true; S.films = sortFilms(fl.data || []); S.rows = rows.data || [];
         S.trackSupported = true; S.profile = prof.data || null;
+        await loadTeamData();
         applyFilm();
         return;
       }
@@ -510,6 +511,32 @@ async function loadUserData() {
   S.profile = prof.data || null;
 }
 
+// Migração 5 (equipe): papéis, notas por pessoa e convites pendentes. Sem ela, o site segue como antes.
+async function loadTeamData() {
+  S.v5 = false; S.roles = new Map(); S.teamSize = new Map(); S.memberPrefs = new Map(); S.notes = []; S.invites = []; S.names = S.names || new Map();
+  if (!S.sb.rpc) return;
+  try {
+    const [mem, notes, inv] = await Promise.all([
+      S.sb.from("film_members").select("film_id,user_id,role,remind,changes,activity"),
+      S.sb.from("festival_notes").select("id,film_id,festival_id,user_id,body,shared,created_at").order("created_at"),
+      S.sb.rpc("my_invites"),
+    ]);
+    if (mem.error || notes.error || inv.error) return;
+    for (const m of mem.data || []) {
+      if (m.user_id === S.user.id) { S.roles.set(m.film_id, m.role); S.memberPrefs.set(m.film_id, m); }
+      if (m.role !== "dono") S.teamSize.set(m.film_id, (S.teamSize.get(m.film_id) || 0) + 1);
+    }
+    S.notes = notes.data || []; S.invites = inv.data || []; S.v5 = true;
+  } catch (e) { console.warn("equipe indisponível", e); }
+}
+async function loadTeam(fid) {
+  const { data, error } = await S.sb.rpc("film_team", { p_film: fid });
+  if (error) { console.error(error); return null; }
+  for (const p of data || []) if (p.user_id) S.names.set(p.user_id, p.name || p.email);
+  (S.teams ||= new Map()).set(fid, data || []);
+  return data || [];
+}
+
 async function toggleSave(id) {
   if (!S.sb) return toast("Login indisponível no momento.");
   if (!S.user) return login();
@@ -519,11 +546,11 @@ async function toggleSave(id) {
   if (!was) S.track.set(id, "quero");
   renderTable(); renderAccount(); refreshDetail(id);
   if (S.v4 && !(await ensureFilm())) { was ? S.saved.add(id) : S.saved.delete(id); renderTable(); renderAccount(); return toast("Não foi possível salvar. Tente de novo."); }
-  let del = S.sb.from("saved_festivals").delete().eq("user_id", S.user.id).eq("festival_id", id);
+  let del = S.sb.from("saved_festivals").delete().eq("user_id", S.v4 ? ownerOf(S.film) : S.user.id).eq("festival_id", id);
   if (S.v4) del = del.eq("film_id", S.film);
   const { error } = was
     ? await del
-    : await S.sb.from("saved_festivals").insert({ user_id: S.user.id, festival_id: id, festival_name: f?.name, ...(S.v4 ? { film_id: S.film } : {}) });
+    : await S.sb.from("saved_festivals").insert({ user_id: S.v4 ? ownerOf(S.film) : S.user.id, festival_id: id, festival_name: f?.name, ...(S.v4 ? { film_id: S.film } : {}) });
   if (!error && S.v4) {
     if (was) S.rows = S.rows.filter((r) => !(r.festival_id === id && r.film_id === S.film));
     else S.rows.push({ festival_id: id, film_id: S.film, status: "quero", notes: null, checklist: null, award: null });
@@ -601,12 +628,14 @@ async function startAuth() {
   S.user = data.session?.user || null;
   await loadUserData();
   renderAccount(); update();
+  checkInvite();
   S.sb.auth.onAuthStateChange(async (_e, session) => {
     const uid = session?.user?.id || null;
     if (uid === (S.user?.id || null)) return;
     S.user = session?.user || null;
     await loadUserData();
     renderAccount(); update();
+    inviteShown = false; checkInvite();
   });
 }
 
@@ -617,7 +646,7 @@ function saveClick(id) {
   if (!S.user) return login();
   if (S.v4) {
     const inFilms = S.rows.filter((r) => r.festival_id === id);
-    if (S.films.length <= 1 && inFilms.length === 1) return saveInFilm(id, inFilms[0].film_id, false);
+    if (S.films.length <= 1 && inFilms.length === 1 && canEditFilm(inFilms[0].film_id)) return saveInFilm(id, inFilms[0].film_id, false);
     return openSaveIn(id);
   }
   return toggleSave(id);
@@ -627,10 +656,11 @@ function openSaveIn(id) {
   $("#si-title").textContent = f ? f.name : "";
   // "Para acompanhar" aparece sempre, mesmo antes de existir: é criada no primeiro uso
   const gen = generalOf() || { id: "__geral", title: GENERAL_TITLE, general: true };
-  const list = [...(S.noGeneral ? [] : [gen]), ...S.films.filter((x) => !x.general)];
+  // Projetos em que a pessoa só visualiza não aparecem aqui
+  const list = [...(S.noGeneral ? [] : [gen]), ...S.films.filter((x) => !x.general && canEditFilm(x.id))];
   $("#si-list").innerHTML = list.map((x) => {
     const on = S.rows.some((r) => r.festival_id === id && r.film_id === x.id);
-    const hint = x.general ? `<small>sem projeto, apenas para acompanhar os prazos</small>` : "";
+    const hint = x.general ? `<small>sem projeto, apenas para acompanhar os prazos</small>` : isShared(x.id) ? `<small>projeto compartilhado${roleOf(x.id) !== "dono" ? `, de ${esc(personName(ownerOf(x.id)))}` : ""}</small>` : "";
     return `<label class="si-row"><input type="checkbox" data-film="${esc(x.id)}" ${on ? "checked" : ""}><span>${esc(x.title)}${hint}</span></label>`;
   }).join("");
   // Sem nenhuma opção (migração antiga e nenhum projeto): já abre o campo do nome
@@ -658,8 +688,8 @@ async function ensureGeneral() {
 async function saveInFilm(id, filmId, on) {
   const f = S.all.find((x) => x.id === id);
   const { error } = on
-    ? await S.sb.from("saved_festivals").insert({ user_id: S.user.id, festival_id: id, festival_name: f?.name, film_id: filmId })
-    : await S.sb.from("saved_festivals").delete().eq("user_id", S.user.id).eq("festival_id", id).eq("film_id", filmId);
+    ? await S.sb.from("saved_festivals").insert({ user_id: ownerOf(filmId), festival_id: id, festival_name: f?.name, film_id: filmId })
+    : await S.sb.from("saved_festivals").delete().eq("user_id", ownerOf(filmId)).eq("festival_id", id).eq("film_id", filmId);
   if (error) { console.error(error); toast("Não foi possível salvar. Tente de novo."); return false; }
   if (on) S.rows.push({ festival_id: id, film_id: filmId, status: "quero", notes: null, checklist: null, award: null });
   else S.rows = S.rows.filter((r) => !(r.festival_id === id && r.film_id === filmId));
@@ -671,7 +701,7 @@ async function saveInFilm(id, filmId, on) {
 
 // ——— planejamento por filme ———
 const FILM_KEY = "rdf-filme";
-const FILM_COLS = "id,title,duration_min,genre,finished_on,premiere_status,country,general";
+const FILM_COLS = "id,title,duration_min,genre,finished_on,premiere_status,country,general,user_id";
 const GENERAL_TITLE = "Para acompanhar";
 const PAGE = 100;
 const generalOf = () => S.films.find((x) => x.general) || null;
@@ -681,7 +711,23 @@ const sortFilms = (l) => [...l.filter((x) => x.general), ...l.filter((x) => !x.g
 const PREMIERE_LABEL = { inedito: "inédito", exibido_brasil: "já exibido no Brasil", exibido_exterior: "já exibido fora do Brasil" };
 const filmOf = () => S.films.find((x) => x.id === S.film) || null;
 const rowOf = (fid) => S.rows.find((r) => r.festival_id === fid && (!S.v4 || r.film_id === S.film));
-function rowQuery(q, fid) { q = q.eq("user_id", S.user.id).eq("festival_id", fid); return S.v4 ? q.eq("film_id", S.film) : q; }
+function rowQuery(q, fid) { q = q.eq("festival_id", fid); return S.v4 ? q.eq("film_id", S.film).eq("user_id", ownerOf(S.film)) : q.eq("user_id", S.user.id); }
+// ——— equipe: dona do projeto, papel de quem está logado e notas ———
+const ownerOf = (fid) => S.films.find((x) => x.id === fid)?.user_id || S.user?.id;
+const roleOf = (fid) => {
+  const f = S.films.find((x) => x.id === fid);
+  if (!f) return null;
+  if (!f.user_id || f.user_id === S.user?.id) return "dono";
+  return S.roles?.get(fid) || "leitor";
+};
+const canEditFilm = (fid) => roleOf(fid) === "dono" || roleOf(fid) === "editor";
+const canEdit = () => !S.v4 || !S.film || canEditFilm(S.film);
+const isShared = (fid) => { const f = S.films.find((x) => x.id === fid); return !!f && ((f.user_id && f.user_id !== S.user?.id) || (S.teamSize?.get(fid) || 0) > 0); };
+const notesFor = (fid, film = S.film) => (S.notes || []).filter((n) => n.festival_id === fid && n.film_id === film);
+const hasNotes = (r) => (S.v5 ? notesFor(r.festival_id, r.film_id).length > 0 : !!r.notes);
+const myNotesText = (r) => (S.v5 ? notesFor(r.festival_id, r.film_id).filter((n) => n.user_id === S.user.id).map((n) => n.body).join("\n\n") : r.notes);
+const personName = (uid) => S.names?.get(uid) || "alguém da equipe";
+const ROLE_TXT = { dono: "criadora", editor: "editor", leitor: "apenas visualização" };
 
 function applyFilm() {
   if (!S.v4) return;
@@ -717,9 +763,18 @@ function renderFilms(mine) {
     ? `Os festivais de <b>${esc(f.title)}</b>. Toque em um festival para marcar a situação da inscrição, usar o checklist de materiais e escrever notas. Para incluir festivais neste projeto, use a estrela ☆ na lista completa e escolha o projeto.`
     : "Salve festivais com a estrela ☆ na lista completa. Na primeira vez, você dá um nome ao seu projeto.";
   const info = f ? [f.duration_min ? `${f.duration_min} min` : "", f.genre || "", PREMIERE_LABEL[f.premiere_status] || "", f.country || ""].filter(Boolean).join(" · ") : "";
-  box.innerHTML = `<span class="kicker">Suas listas</span>
-    <div class="film-chips">${S.films.map((x) => `<button class="fchip" data-film="${esc(x.id)}" aria-pressed="${x.id === S.film}">${esc(x.title)}</button>`).join("")}<button class="fchip add" id="film-new">+ novo projeto</button></div>
-    ${f && !f.general ? `<p class="film-info">${esc(info)}${!f.duration_min || !f.genre ? `${info ? " · " : ""}<span class="muted">preencha a ficha para ver quais festivais estão dentro dos requisitos</span>` : ""} <button class="link-btn" id="film-edit">editar ou apagar</button></p>` : ""}`;
+  const role = f ? roleOf(f.id) : null;
+  if (f && !f.general && role === "leitor") $("#mine-help").innerHTML = `Você acompanha <b>${esc(f.title)}</b> no modo apenas visualização. Toque em um festival para ver a situação, o checklist e as notas compartilhadas, e escrever as suas.`;
+  else if (f && !f.general && role === "editor") $("#mine-help").innerHTML = `Os festivais de <b>${esc(f.title)}</b>, projeto de ${esc(personName(f.user_id))}. Como editor, você marca a situação, usa o checklist, escreve notas e inclui festivais com a estrela ☆ na lista completa.`;
+  if (f && isShared(f.id) && role !== "dono" && !S.names?.has(f.user_id)) loadTeam(f.id).then(() => renderFilms(true));
+  const invites = S.v5 ? S.invites : [];
+  const teamBtn = f && !f.general && S.v5
+    ? `<button class="btn team" type="button" id="film-team">${role === "dono" ? ICO_INVITE : ICO_TEAM}<span>${role === "dono" ? (isShared(f.id) ? "Equipe" : "Convidar equipe") : "Ver equipe"}</span></button>`
+    : "";
+  box.innerHTML = `${invites.map((v) => `<div class="inv-bar">${ICO_TEAM}<span>${esc(v.inviter)} convidou você para o projeto <b>${esc(v.film_title)}</b>.</span><button class="btn" type="button" data-inv="${esc(v.id)}">Ver convite</button></div>`).join("")}
+    <span class="kicker">Suas listas</span>
+    <div class="film-chips">${S.films.map((x) => `<button class="fchip${isShared(x.id) ? " shared" : ""}" data-film="${esc(x.id)}" aria-pressed="${x.id === S.film}"${isShared(x.id) ? ` title="Projeto compartilhado"` : ""}>${isShared(x.id) ? ICO_TEAM : ""}${esc(x.title)}</button>`).join("")}<button class="fchip add" id="film-new">+ novo projeto</button></div>
+    ${f && !f.general ? `<div class="film-head"><p class="film-info">${role !== "dono" ? `<span>projeto de ${esc(personName(f.user_id))} · você é ${ROLE_TXT[role]}</span>${info ? " · " : ""}` : ""}${esc(info)}${role === "dono" && (!f.duration_min || !f.genre) ? `${info ? " · " : ""}<span class="muted">preencha a ficha para ver quais festivais estão dentro dos requisitos</span>` : ""}${role === "dono" ? ` <button class="link-btn" id="film-edit">editar ou apagar</button>` : ""}</p>${teamBtn}</div>` : ""}`;
 }
 
 function openFilm(film) {
@@ -787,9 +842,9 @@ function fitOf(f, film) {
 function inscBadge(f) {
   if (!S.v4) return "";
   const r = rowOf(f.id); if (!r) return "";
-  if (inGeneral()) return r.notes ? `<span class="insc-badge">com notas</span>` : "";
+  if (inGeneral()) return hasNotes(r) ? `<span class="insc-badge">com notas</span>` : "";
   const list = checklistOf(r); const done = list.filter((x) => x.d).length;
-  return `<span class="insc-badge">checklist ${done}/${list.length}${r.notes ? " · com notas" : ""}${r.award ? " · prêmio" : ""}</span>`;
+  return `<span class="insc-badge">checklist ${done}/${list.length}${hasNotes(r) ? " · com notas" : ""}${r.award ? " · prêmio" : ""}</span>`;
 }
 function fitHTML(f) {
   if (!S.v4) return "";
@@ -807,31 +862,35 @@ const checklistOf = (r) => (Array.isArray(r?.checklist) ? r.checklist : CHECK_DE
 function inscricaoHTML(f) {
   const r = rowOf(f.id) || {};
   if (inGeneral()) {
-    const projects = S.films.filter((x) => !x.general);
+    const projects = S.films.filter((x) => !x.general && roleOf(x.id) === "dono");
     return `<section class="insc">
       <div class="move move-top"><span class="kicker">Vai inscrever um filme?</span>
         ${projects.length
           ? `<label for="in-move">Mova este festival para o projeto e ganhe checklist de materiais, situação da inscrição e requisitos do filme.</label><select id="in-move"><option value="">escolha o projeto</option>${projects.map((x) => `<option value="${esc(x.id)}">${esc(x.title)}</option>`).join("")}</select>`
           : `<label for="in-newproj">Crie o projeto e mova este festival para ele: ganha checklist de materiais, situação da inscrição e requisitos do filme.</label><div class="si-newbox"><input id="in-newproj" maxlength="200" placeholder="nome do projeto, ex.: título do seu curta"><button type="button" class="btn" id="in-newproj-go">Criar e mover</button></div>`}
         <small>As notas vão junto.</small></div>
-      <label class="kicker" for="in-notes">Notas (só você vê)</label>
-      <textarea id="in-notes" maxlength="4000" rows="4" placeholder="Por que vale acompanhar, contatos, categorias que podem abrir…">${esc(r.notes || "")}</textarea>
+      ${S.v5 ? notesHTML(f) : `<label class="kicker" for="in-notes">Notas (só você vê)</label>
+      <textarea id="in-notes" maxlength="4000" rows="4" placeholder="Por que vale acompanhar, contatos, categorias que podem abrir…">${esc(r.notes || "")}</textarea>`}
       <p class="muted small" id="in-status" aria-live="polite"></p>
     </section>`;
   }
   const list = checklistOf(r);
   const done = list.filter((x) => x.d).length;
   const conflicts = r.status === "selecionado" ? premiereConflicts(f.id) : [];
-  return `<section class="insc">
-    ${S.films.length > 1 ? `<div class="move move-top"><label for="in-move">Mover este festival para outra lista</label><select id="in-move"><option value="">escolha a lista</option>${S.films.filter((x) => x.id !== S.film).map((x) => `<option value="${esc(x.id)}">${esc(x.title)}</option>`).join("")}</select><small>Sai de “${esc(filmOf()?.title || "")}” e leva a situação, o checklist e as notas.</small></div>` : ""}
+  const ro = !canEdit();
+  // Mover só entre listas da mesma dona (a linha pertence a ela)
+  const targets = ro ? [] : S.films.filter((x) => x.id !== S.film && canEditFilm(x.id) && ownerOf(x.id) === ownerOf(S.film));
+  return `<section class="insc${ro ? " ro" : ""}">
+    ${ro ? `<p class="ro-msg">Você vê este projeto no modo apenas visualização. Suas notas continuam disponíveis.</p>` : ""}
+    ${targets.length ? `<div class="move move-top"><label for="in-move">Mover este festival para outra lista</label><select id="in-move"><option value="">escolha a lista</option>${targets.map((x) => `<option value="${esc(x.id)}">${esc(x.title)}</option>`).join("")}</select><small>Sai de “${esc(filmOf()?.title || "")}” e leva a situação, o checklist e ${S.v5 ? "as suas notas" : "as notas"}.</small></div>` : ""}
     ${filmOf() && S.films.length > 1 ? `<span class="kicker">Inscrição de “${esc(filmOf().title)}”</span>` : ""}
     ${conflicts.length ? `<div class="alert-est"><b>Atenção à estreia</b>Com esta seleção, o filme deixa de ser inédito. Na lista deste projeto, ${conflicts.map((x) => esc(x.name)).join(", ")} ${conflicts.length === 1 ? "pede" : "pedem"} ineditismo: confira o regulamento antes de inscrever.</div>` : ""}
-    ${r.status === "selecionado" ? `<label class="award">Prêmio ou menção (opcional)<input id="in-award" maxlength="200" value="${esc(r.award || "")}" placeholder="ex.: Prêmio do júri"></label>` : ""}
+    ${r.status === "selecionado" ? `<label class="award">Prêmio ou menção (opcional)<input id="in-award" maxlength="200" value="${esc(r.award || "")}" placeholder="ex.: Prêmio do júri"${ro ? " disabled" : ""}></label>` : ""}
     <span class="kicker">Checklist de materiais · ${done} de ${list.length}</span>
-    <ul class="ck" id="in-ck">${list.map((x, i) => `<li><label><input type="checkbox" data-i="${i}" ${x.d ? "checked" : ""}><span>${esc(x.t)}</span></label><button type="button" class="link-btn ck-del" data-i="${i}" aria-label="Tirar ${esc(x.t)}">×</button></li>`).join("")}</ul>
-    <form class="ck-add" id="in-ck-add"><input id="in-ck-new" maxlength="120" placeholder="Adicionar item" aria-label="Novo item do checklist"><button class="btn ghost">Adicionar</button></form>
-    <label class="kicker" for="in-notes">Notas (só você vê)</label>
-    <textarea id="in-notes" maxlength="4000" rows="4" placeholder="Senha do link enviado, contatos da curadoria, datas importantes…">${esc(r.notes || "")}</textarea>
+    <ul class="ck" id="in-ck">${list.map((x, i) => `<li><label><input type="checkbox" data-i="${i}" ${x.d ? "checked" : ""}${ro ? " disabled" : ""}><span>${esc(x.t)}</span></label>${ro ? "" : `<button type="button" class="link-btn ck-del" data-i="${i}" aria-label="Tirar ${esc(x.t)}">×</button>`}</li>`).join("")}</ul>
+    ${ro ? "" : `<form class="ck-add" id="in-ck-add"><input id="in-ck-new" maxlength="120" placeholder="Adicionar item" aria-label="Novo item do checklist"><button class="btn ghost">Adicionar</button></form>`}
+    ${S.v5 ? notesHTML(f) : `<label class="kicker" for="in-notes">Notas (só você vê)</label>
+    <textarea id="in-notes" maxlength="4000" rows="4" placeholder="Senha do link enviado, contatos da curadoria, datas importantes…">${esc(r.notes || "")}</textarea>`}
     <p class="muted small" id="in-status" aria-live="polite"></p>
   </section>`;
 }
@@ -845,8 +904,9 @@ async function saveRow(fid, patch) {
 }
 function bindInscricao(f) {
   const r = rowOf(f.id) || {};
+  if (S.v5) bindNotes(f);
   if (inGeneral()) {
-    $("#in-notes").onchange = (e) => saveRow(f.id, { notes: e.target.value.slice(0, 4000) || null });
+    if ($("#in-notes")) $("#in-notes").onchange = (e) => saveRow(f.id, { notes: e.target.value.slice(0, 4000) || null });
     if ($("#in-move")) $("#in-move").onchange = (e) => e.target.value && moveRow(f.id, e.target.value);
     if ($("#in-newproj-go")) $("#in-newproj-go").onclick = async () => {
       const title = ($("#in-newproj").value.trim() || "Meu projeto").slice(0, 200);
@@ -857,12 +917,13 @@ function bindInscricao(f) {
     };
     return;
   }
+  if (!canEdit()) return;
   let list = checklistOf(r).map((x) => ({ ...x }));
   const save = () => saveRow(f.id, { checklist: list }).then((ok) => ok && refreshDetail(f.id));
   $("#in-ck").onchange = (e) => { const i = +e.target.dataset.i; if (Number.isInteger(i)) { list[i].d = e.target.checked; save(); } };
   $("#in-ck").onclick = (e) => { if (e.target.classList.contains("ck-del")) { list.splice(+e.target.dataset.i, 1); save(); } };
   $("#in-ck-add").onsubmit = (e) => { e.preventDefault(); const t = $("#in-ck-new").value.trim(); if (!t) return; list.push({ t: t.slice(0, 120), d: false }); save(); };
-  $("#in-notes").onchange = (e) => saveRow(f.id, { notes: e.target.value.slice(0, 4000) || null });
+  if ($("#in-notes")) $("#in-notes").onchange = (e) => saveRow(f.id, { notes: e.target.value.slice(0, 4000) || null });
   if ($("#in-move")) $("#in-move").onchange = (e) => e.target.value && moveRow(f.id, e.target.value);
   if ($("#in-award")) $("#in-award").onchange = (e) => saveRow(f.id, { award: e.target.value.trim().slice(0, 200) || null });
 }
@@ -879,9 +940,282 @@ async function moveRow(fid, to) {
   if (error) { console.error(error); if ($("#in-move")) $("#in-move").value = ""; return toast("Não foi possível mover. Tente de novo."); }
   const r = S.rows.find((x) => x.festival_id === fid && x.film_id === from);
   if (r) r.film_id = to;
+  if (S.v5) {
+    const { error: ne } = await S.sb.from("festival_notes").update({ film_id: to }).eq("film_id", from).eq("festival_id", fid).eq("user_id", S.user.id);
+    if (ne) console.error(ne);
+    else S.notes.forEach((n) => { if (n.film_id === from && n.festival_id === fid && n.user_id === S.user.id) n.film_id = to; });
+  }
   applyFilm(); renderAccount(); renderTable();
   $("#detail").close();
   toast(`Movido para “${target?.title}”.`);
+}
+
+// ——— notas: privadas por padrão, compartilhadas uma a uma ———
+const ICO_LOCK = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
+const ICO_TEAM = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.8 0 4.9 2 5.5 5"/></svg>`;
+const ICO_INVITE = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/></svg>`;
+const NOTE_COLS = "id,film_id,festival_id,user_id,body,shared,created_at";
+function notesHTML(f) {
+  const gen = inGeneral();
+  const items = notesFor(f.id).map((n) => {
+    const mine = n.user_id === S.user.id;
+    const who = mine ? (gen ? "" : n.shared ? "sua nota, a equipe vê" : "sua nota, só você vê") : `nota de ${esc(personName(n.user_id))}`;
+    const pill = mine && !gen
+      ? `<button type="button" class="vis${n.shared ? " on" : ""}" data-note="${esc(n.id)}" data-act="share" aria-pressed="${n.shared}" title="${n.shared ? "Toque para tornar privada" : "Toque para compartilhar com a equipe"}">${n.shared ? ICO_TEAM + "Compartilhada" : ICO_LOCK + "Privada"}</button>`
+      : "";
+    const tools = mine ? `<button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="edit">editar</button><button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="del">apagar</button>` : "";
+    return `<li class="nt" data-id="${esc(n.id)}">${gen ? "" : n.shared ? ICO_TEAM : ICO_LOCK}<div class="nt-body"><p>${esc(n.body)}</p>${who ? `<small>${who}</small>` : ""}</div><div class="nt-acts">${pill}${tools}</div></li>`;
+  }).join("");
+  return `<span class="kicker">${gen ? "Notas (só você vê)" : "Notas"}</span>
+    ${items ? `<ul class="nt-list" id="nt-list">${items}</ul>` : `<ul class="nt-list" id="nt-list"></ul>`}
+    <form class="nt-add" id="nt-add"><textarea id="nt-new" maxlength="4000" rows="2" aria-label="Nova nota" placeholder="${gen ? "Por que vale acompanhar, contatos, categorias que podem abrir…" : "Contatos da curadoria, senha do link, datas importantes…"}"></textarea><button class="btn ghost">Adicionar nota</button></form>
+    ${gen ? "" : `<p class="muted small">Notas novas começam privadas. Toque em <b>Privada</b> para compartilhar com a equipe.</p>`}`;
+}
+function bindNotes(f) {
+  if (!$("#nt-add")) return;
+  if (isShared(S.film) && !S.teams?.has(S.film)) loadTeam(S.film).then(() => refreshDetail(f.id));
+  $("#nt-add").onsubmit = async (e) => {
+    e.preventDefault();
+    const body = $("#nt-new").value.trim().slice(0, 4000);
+    if (!body) return;
+    const { data, error } = await S.sb.from("festival_notes").insert({ film_id: S.film, festival_id: f.id, user_id: S.user.id, body }).select(NOTE_COLS).single();
+    if (error) { console.error(error); return toast("Não foi possível salvar a nota."); }
+    S.notes.push(data); refreshDetail(f.id); renderTable();
+  };
+  $("#nt-list").onclick = async (e) => {
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    const n = S.notes.find((x) => x.id === b.dataset.note);
+    if (!n) return;
+    const act = b.dataset.act;
+    if (act === "share") {
+      const shared = !n.shared;
+      const { error } = await S.sb.from("festival_notes").update({ shared }).eq("id", n.id);
+      if (error) { console.error(error); return toast("Não foi possível alterar a nota."); }
+      n.shared = shared; refreshDetail(f.id);
+      return toast(shared ? "Nota compartilhada com a equipe." : "Nota agora é privada.");
+    }
+    if (act === "del") {
+      if (!confirm("Apagar esta nota?")) return;
+      const { error } = await S.sb.from("festival_notes").delete().eq("id", n.id);
+      if (error) { console.error(error); return toast("Não foi possível apagar a nota."); }
+      S.notes = S.notes.filter((x) => x.id !== n.id); refreshDetail(f.id); renderTable();
+      return;
+    }
+    if (act === "edit") {
+      const li = b.closest(".nt");
+      li.querySelector(".nt-body").innerHTML = `<textarea class="nt-edit" maxlength="4000" rows="3" aria-label="Editar nota">${esc(n.body)}</textarea>`;
+      li.querySelector(".nt-acts").innerHTML = `<button type="button" class="btn ghost" data-note="${esc(n.id)}" data-act="save">Salvar</button>`;
+      li.querySelector("textarea").focus();
+      return;
+    }
+    if (act === "save") {
+      const body = b.closest(".nt").querySelector("textarea").value.trim().slice(0, 4000);
+      if (!body) return toast("A nota está vazia. Para tirar, use apagar.");
+      const { error } = await S.sb.from("festival_notes").update({ body }).eq("id", n.id);
+      if (error) { console.error(error); return toast("Não foi possível salvar a nota."); }
+      n.body = body; refreshDetail(f.id);
+    }
+  };
+}
+
+// ——— equipe do projeto ———
+async function openTeam() {
+  const film = filmOf();
+  if (!film || film.general || !S.v5) return;
+  const owner = roleOf(film.id) === "dono";
+  $("#tm-title").textContent = film.title;
+  $("#tm-help").textContent = owner
+    ? "Quem você convidar vê este projeto em Meus salvos, com os mesmos festivais, situações e checklist. As notas continuam privadas, a não ser as que cada pessoa escolher compartilhar."
+    : `Projeto de ${personName(film.user_id)}. Seu perfil é ${ROLE_TXT[roleOf(film.id)]}.`;
+  $("#tm-invite").hidden = !owner;
+  $("#tm-leave").hidden = owner;
+  $("#tm-status").textContent = "";
+  $("#tm-email").value = "";
+  renderTeamPrefs();
+  $("#tm-list").innerHTML = `<p class="muted small">Carregando a equipe…</p>`;
+  if (!$("#team").open) $("#team").showModal();
+  await renderTeamList();
+}
+function renderTeamPrefs() {
+  const film = filmOf();
+  const m = S.memberPrefs.get(film?.id);
+  const owner = roleOf(film?.id) === "dono";
+  // A dona recebe lembretes e mudanças pelo perfil; aqui escolhe só o resumo da equipe
+  $("#tm-prefs").hidden = !m;
+  if (!m) return;
+  $("#tm-remind-row").hidden = owner;
+  $("#tm-changes-row").hidden = owner;
+  $("#tm-remind").checked = m.remind;
+  $("#tm-changes").checked = m.changes;
+  $("#tm-activity").checked = m.activity;
+}
+async function saveTeamPrefs() {
+  const fid = S.film;
+  const upd = { remind: $("#tm-remind").checked, changes: $("#tm-changes").checked, activity: $("#tm-activity").checked };
+  const { error } = await S.sb.from("film_members").update(upd).eq("film_id", fid).eq("user_id", S.user.id);
+  if (error) { console.error(error); $("#tm-status").textContent = "Não foi possível salvar seus avisos."; return; }
+  Object.assign(S.memberPrefs.get(fid), upd);
+  $("#tm-status").textContent = "Avisos salvos.";
+}
+async function renderTeamList() {
+  const film = filmOf();
+  const team = await loadTeam(film.id);
+  if (!team) { $("#tm-list").innerHTML = `<p class="muted small">Não foi possível carregar a equipe.</p>`; return; }
+  const owner = roleOf(film.id) === "dono";
+  const ini = (t) => esc((t || "?").trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase());
+  const order = { dono: 0, membro: 1, convite: 2 };
+  $("#tm-list").innerHTML = [...team].sort((a, b) => order[a.kind] - order[b.kind]).map((p) => {
+    const me = p.user_id === S.user.id;
+    const name = p.kind === "convite" ? p.email : p.name || p.email;
+    const sub = p.kind === "convite" ? "convite enviado, aguardando" : me ? "você" : p.email;
+    let right = `<span class="role">${p.kind === "dono" ? "Criadora" : p.role === "editor" ? "Editor" : "Apenas visualização"}</span>`;
+    if (owner && p.kind !== "dono") {
+      const key = p.kind === "convite" ? `i:${p.invite_id}` : `m:${p.user_id}`;
+      right = `<select data-k="${esc(key)}" aria-label="Perfil de ${esc(name)}"><option value="editor"${p.role === "editor" ? " selected" : ""}>Editor</option><option value="leitor"${p.role === "leitor" ? " selected" : ""}>Apenas visualização</option>${p.kind === "convite" ? `<option value="resend">Reenviar convite</option><option value="remove">Cancelar convite</option>` : `<option value="remove">Remover do projeto</option>`}</select>`;
+    }
+    return `<div class="mrow"><span class="av${me ? " me" : ""}">${ini(name)}</span><span class="mname">${esc(name)}<small>${esc(sub)}</small></span>${right}</div>`;
+  }).join("");
+  S.teamSize.set(film.id, team.filter((p) => p.kind === "membro").length);
+}
+async function teamApi(body) {
+  const { data } = await S.sb.auth.getSession();
+  const res = await fetch("/api/equipe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token || ""}` },
+    body: JSON.stringify(body),
+  });
+  let out = {};
+  try { out = await res.json(); } catch {}
+  return { ok: res.ok, ...out };
+}
+async function sendInvite() {
+  const email = $("#tm-email").value.trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $("#tm-status").textContent = "Digite um e-mail válido."; return; }
+  const role = document.querySelector('input[name="tm-role"]:checked').value;
+  $("#tm-send").disabled = true;
+  $("#tm-status").textContent = "Enviando…";
+  const r = await teamApi({ action: "invite", film_id: S.film, email, role });
+  $("#tm-send").disabled = false;
+  if (!r.ok) { $("#tm-status").textContent = r.error || "Não foi possível enviar o convite."; if (r.invite_id) renderTeamList(); return; }
+  $("#tm-email").value = "";
+  $("#tm-status").textContent = `Convite enviado para ${email}.`;
+  if (!S.memberPrefs.has(S.film)) S.memberPrefs.set(S.film, { film_id: S.film, user_id: S.user.id, role: "dono", remind: true, changes: true, activity: false });
+  renderTeamPrefs();
+  renderTeamList();
+}
+async function teamChange(e) {
+  const sel = e.target.closest("select[data-k]");
+  if (!sel) return;
+  const [kind, id] = sel.dataset.k.split(":");
+  const v = sel.value;
+  let error = null, msg = "";
+  if (v === "resend") {
+    const r = await teamApi({ action: "resend", invite_id: id });
+    if (!r.ok) error = { message: r.error };
+    msg = "Convite reenviado.";
+  } else if (v === "remove") {
+    if (!confirm(kind === "i" ? "Cancelar este convite?" : "Remover esta pessoa do projeto? As notas privadas dela neste projeto são apagadas.")) { renderTeamList(); return; }
+    ({ error } = kind === "i"
+      ? await S.sb.from("film_invites").delete().eq("id", id)
+      : await S.sb.from("film_members").delete().eq("film_id", S.film).eq("user_id", id));
+    msg = kind === "i" ? "Convite cancelado." : "Pessoa removida do projeto.";
+  } else {
+    ({ error } = kind === "i"
+      ? await S.sb.from("film_invites").update({ role: v }).eq("id", id)
+      : await S.sb.from("film_members").update({ role: v }).eq("film_id", S.film).eq("user_id", id));
+    msg = "Perfil alterado.";
+  }
+  $("#tm-status").textContent = error ? error.message || "Não foi possível alterar." : msg;
+  renderTeamList();
+  renderAccount(); update();
+}
+async function leaveFilm() {
+  const film = filmOf();
+  if (!film || !confirm(`Sair do projeto “${film.title}”? Suas notas privadas neste projeto são apagadas.`)) return;
+  const { error } = await S.sb.from("film_members").delete().eq("film_id", film.id).eq("user_id", S.user.id);
+  if (error) { console.error(error); $("#tm-status").textContent = "Não foi possível sair do projeto."; return; }
+  $("#team").close();
+  await loadUserData();
+  try { localStorage.removeItem(FILM_KEY); } catch {}
+  applyFilm(); renderAccount(); update();
+  toast(`Você saiu de “${film.title}”.`);
+}
+
+// ——— convite recebido ———
+const INVITE_KEY = "rdf-convite";
+const INVITE_ID = (() => {
+  const p = new URLSearchParams(location.search).get("convite");
+  if (p && /^[0-9a-f-]{36}$/i.test(p)) { try { sessionStorage.setItem(INVITE_KEY, p); } catch {} return p; }
+  try { return sessionStorage.getItem(INVITE_KEY); } catch { return null; }
+})();
+const clearInviteId = () => { try { sessionStorage.removeItem(INVITE_KEY); } catch {} };
+let inviteShown = false;
+async function checkInvite() {
+  if (inviteShown || !S.sb) return;
+  if (INVITE_ID && !S.user) { inviteShown = true; return showInvite({ mode: "login" }); }
+  if (!S.user || !S.v5) return;
+  const inv = INVITE_ID ? S.invites.find((x) => x.id === INVITE_ID) : null;
+  if (inv) { inviteShown = true; return showInvite({ mode: "accept", inv }); }
+  if (INVITE_ID) {
+    inviteShown = true;
+    const { data } = await S.sb.rpc("invite_info", { p_id: INVITE_ID });
+    const info = data?.[0];
+    if (!info) { clearInviteId(); return toast("Este convite não existe mais ou já foi usado."); }
+    if (!info.mine) return showInvite({ mode: "wrong", info });
+  }
+}
+function showInvite({ mode, inv, info }) {
+  const d = $("#invite");
+  $("#iv-err").hidden = mode !== "wrong";
+  $("#iv-prefs").hidden = mode !== "accept";
+  $("#iv-decline").hidden = mode !== "accept";
+  $("#iv-accept").dataset.mode = mode;
+  if (mode === "login") {
+    $("#iv-title").textContent = "Entre para aceitar o convite";
+    $("#iv-text").textContent = "Você recebeu um convite para a equipe de um projeto no Radar. Entre com a conta Google do e-mail que recebeu o convite.";
+    $("#iv-accept").textContent = "Entrar com Google";
+  } else if (mode === "wrong") {
+    $("#iv-title").textContent = "Este convite é para outra conta";
+    $("#iv-text").textContent = `${info.inviter} convidou você para o projeto “${info.film_title}”.`;
+    $("#iv-err").textContent = `O convite foi enviado para ${info.email_hint}, e você entrou como ${S.user.email}. Saia e entre com a conta Google do e-mail convidado, ou peça um convite para este e-mail.`;
+    $("#iv-accept").textContent = "Sair e entrar com outra conta";
+  } else {
+    $("#iv-title").textContent = inv.film_title;
+    $("#iv-text").innerHTML = `${esc(inv.inviter)} convidou você para a equipe deste projeto como <b>${esc(ROLE_TXT[inv.role])}</b>. ${inv.role === "editor" ? "Você inclui e tira festivais, muda a situação e marca o checklist." : "Você acompanha os festivais, as situações e o checklist, sem alterar."} No site, o acesso é o mesmo de quem criou o projeto, conforme o seu perfil.`;
+    $("#iv-accept").textContent = "Aceitar e abrir o projeto";
+    $("#iv-accept").dataset.id = inv.id;
+    $("#iv-decline").dataset.id = inv.id;
+    ["iv-remind", "iv-changes"].forEach((k) => ($("#" + k).checked = true));
+    $("#iv-activity").checked = false;
+  }
+  if (!d.open) d.showModal();
+}
+async function inviteAction() {
+  const mode = $("#iv-accept").dataset.mode;
+  if (mode === "login") { $("#invite").close(); return login(); }
+  if (mode === "wrong") { $("#invite").close(); await S.sb.auth.signOut(); return login(); }
+  const id = $("#iv-accept").dataset.id;
+  const { data, error } = await S.sb.rpc("accept_invite", { p_id: id, p_remind: $("#iv-remind").checked, p_changes: $("#iv-changes").checked, p_activity: $("#iv-activity").checked });
+  if (error) { console.error(error); $("#iv-err").hidden = false; $("#iv-err").textContent = error.message || "Não foi possível aceitar o convite."; return; }
+  clearInviteId();
+  $("#invite").close();
+  await loadUserData();
+  try { localStorage.setItem(FILM_KEY, data); } catch {}
+  applyFilm();
+  S.s = "mine"; renderAccount(); update();
+  $("#lista")?.scrollIntoView({ behavior: "smooth" });
+  toast("Convite aceito. O projeto já está em Meus salvos.");
+}
+async function declineInvite() {
+  if (!confirm("Recusar este convite?")) return;
+  const id = $("#iv-decline").dataset.id;
+  const { error } = await S.sb.rpc("decline_invite", { p_id: id });
+  if (error) { console.error(error); return toast("Não foi possível recusar."); }
+  clearInviteId();
+  S.invites = S.invites.filter((x) => x.id !== id);
+  $("#invite").close(); renderAccount(); update();
+  toast("Convite recusado.");
 }
 
 // ——— relatório de circulação (página para imprimir ou salvar em PDF) ———
@@ -893,7 +1227,7 @@ async function openReport() {
   const rowsData = list.map((f) => {
     const st = S.track.get(f.id); const r = rowOf(f.id) || {};
     const fee = feeFor(f); const v = toBRL(fee.v, fee.c);
-    return { f, st, award: r.award, notes: r.notes, v, fee };
+    return { f, st, award: r.award, notes: myNotesText(r), v, fee };
   });
   const sel = rowsData.filter((x) => x.st === "selecionado").length;
   const prizes = rowsData.filter((x) => x.award).length;
@@ -1076,7 +1410,8 @@ function openDetail(id) {
   if (f.rulesUrl) acts.push(`<a class="btn ghost" href="${esc(f.rulesUrl)}" target="_blank" rel="noopener">Regulamento ↗</a>`);
   acts.push(`<button class="btn ghost" id="dt-share">${SHARE_ICO} Compartilhar</button>`);
   acts.push(`<button class="btn ghost" id="dt-save">${S.v4 && S.films.length > 1 ? (inFilms.length ? `★ Em ${inFilms.length === 1 ? `“${esc(inFilms[0].title)}”` : `${inFilms.length} projetos`}` : "☆ Salvar em um projeto") : saved ? "★ Salvo" : "☆ Salvar"}</button>`);
-  if (saved && S.trackSupported && !inGeneral()) {
+  if (saved && S.trackSupported && !inGeneral() && !canEdit()) acts.push(`<span class="muted small">Situação · ${esc(TRACK_LABEL[S.track.get(id) || "quero"])}</span>`);
+  else if (saved && S.trackSupported && !inGeneral()) {
     const cur = S.track.get(id) || "quero";
     acts.push(`<label class="sr" for="dt-track">Situação</label><select id="dt-track">${TRACK.map(([v, l]) => `<option value="${v}" ${v === cur ? "selected" : ""}>${l}</option>`).join("")}</select>`);
   }
@@ -1203,6 +1538,9 @@ function bind() {
     const b = e.target.closest("[data-film]"); if (b) return selectFilm(b.dataset.film);
     if (e.target.id === "film-new") return openFilm(null);
     if (e.target.id === "film-edit") return openFilm(filmOf());
+    if (e.target.closest("#film-team")) return openTeam();
+    const iv = e.target.closest("[data-inv]");
+    if (iv) { const inv = S.invites.find((x) => x.id === iv.dataset.inv); if (inv) return showInvite({ mode: "accept", inv }); }
   };
   $("#film-form").onsubmit = saveFilm;
   $("#si-list").onchange = async (e) => {
@@ -1213,6 +1551,19 @@ function bind() {
     if (!fid || !(await saveInFilm($("#savein").dataset.id, fid, c.checked))) c.checked = !c.checked;
     c.disabled = false;
   };
+  $("#tm-send").onclick = sendInvite;
+  $("#tm-email").onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); sendInvite(); } };
+  $("#tm-list").onchange = teamChange;
+  $("#tm-leave").onclick = leaveFilm;
+  $("#tm-prefs").onchange = saveTeamPrefs;
+  $$('input[name="tm-role"]').forEach((r) => (r.onchange = () => {
+    $("#tm-role-help").textContent = r.value === "editor"
+      ? "Editor inclui e tira festivais, muda a situação e marca o checklist."
+      : "Apenas visualização vê os festivais, as situações, o checklist e as notas compartilhadas, sem alterar.";
+  }));
+  $("#iv-accept").onclick = inviteAction;
+  $("#iv-decline").onclick = declineInvite;
+  $("#team").addEventListener("click", (e) => { if (e.target === $("#team")) $("#team").close(); });
   $("#si-new").onclick = () => { $("#si-new").hidden = true; $("#si-newbox").hidden = false; $("#si-name").focus(); };
   $("#si-create").onclick = createProjectAndSave;
   $("#si-name").onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); createProjectAndSave(); } };

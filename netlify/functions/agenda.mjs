@@ -17,6 +17,11 @@ export default async (req) => {
     fetchFestivals(),
     db.selectAll(`/saved_festivals?select=festival_id&user_id=eq.${prof[0].id}${film ? `&film_id=eq.${film}` : ""}`),
   ]);
+  // Projetos de que a pessoa participa também entram na agenda dela
+  try {
+    const mem = await db.selectAll(`/film_members?select=film_id&user_id=eq.${prof[0].id}&role=neq.dono${film ? `&film_id=eq.${film}` : ""}`);
+    if (mem.length) saved.push(...(await db.selectAll(`/saved_festivals?select=festival_id&film_id=in.(${mem.map((m) => m.film_id).join(",")})`)));
+  } catch {}
   const ids = new Set(saved.map((r) => r.festival_id));
   const siteUrl = process.env.SITE_URL || process.env.URL || "";
   const body = buildCalendar(festivals.filter((f) => ids.has(f.id)), { siteUrl, today: todayBRT() });

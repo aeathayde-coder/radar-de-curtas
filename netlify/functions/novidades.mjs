@@ -7,6 +7,7 @@ import { fetchFestivals, todayBRT } from "../lib/festivals.mjs";
 import { detectChanges, selectDigest, buildDigest } from "../lib/novidades.mjs";
 import { unsubscribeToken } from "../lib/reminders.mjs";
 import { admin } from "../lib/supabase-admin.mjs";
+import { memberRows, selectActivity } from "../lib/equipe.mjs";
 
 const FROM = process.env.RESEND_FROM || "Radar de Festivais <onboarding@resend.dev>";
 
@@ -45,10 +46,34 @@ export default async () => {
     db.selectAll("/saved_festivals?select=user_id,festival_id,profiles!inner(email,email_opt_in,change_alerts)&profiles.email_opt_in=eq.true"),
     db.selectAll("/saved_searches?select=user_id,label,params,profiles!inner(email,email_opt_in)&notify=eq.true&profiles.email_opt_in=eq.true"),
   ]);
-  if (!recent.length) return new Response("ok");
+  // Equipe: mudanças nos projetos de que a pessoa participa e resumo da atividade
+  let actUsers = new Map();
+  try {
+    const [members, filmSaved, activity, films, actSent] = await Promise.all([
+      db.selectAll("/film_members?select=film_id,user_id,role,changes,activity,profiles!inner(email,email_opt_in,change_alerts,full_name)&profiles.email_opt_in=eq.true"),
+      db.selectAll("/saved_festivals?select=film_id,festival_id,status"),
+      db.selectAll(`/film_activity?select=id,film_id,actor,kind,festival_id,detail&at=gte.${since}&order=id`),
+      db.selectAll("/films?select=id,title"),
+      db.selectAll(`/activity_sent?select=user_id,activity_id&sent_at=gte.${since}`),
+    ]);
+    saved.push(...memberRows({ saved: filmSaved, members, flag: "changes" }));
+    const actors = [...new Set(activity.map((a) => a.actor).filter(Boolean))];
+    const people = actors.length ? await db.selectAll(`/profiles?select=id,full_name,email&id=in.(${actors.join(",")})`) : [];
+    actUsers = selectActivity({
+      activity, members, festivals,
+      names: new Map(people.map((p) => [p.id, p.full_name || p.email])),
+      films: new Map(films.map((f) => [f.id, f.title])),
+      sent: new Set(actSent.map((r) => `${r.user_id}|${r.activity_id}`)),
+    });
+  } catch (e) {
+    console.log("[novidades] migração 5 ainda não rodada; sem avisos da equipe");
+  }
+  if (!recent.length && !actUsers.size) return new Response("ok");
   const sentRows = await db.selectAll(`/digest_sent?select=user_id,change_id&sent_at=gte.${since}`);
   const sent = new Set(sentRows.map((r) => `${r.user_id}|${r.change_id}`));
   const batches = selectDigest({ changes: recent, festivals, saved, searches, sent });
+  for (const b of batches) { const a = actUsers.get(b.userId); if (a) { b.activity = a.activity; b.activityIds = a.activityIds; actUsers.delete(b.userId); } }
+  for (const a of actUsers.values()) batches.push({ userId: a.userId, email: a.email, changes: [], searches: [], ids: [], activity: a.activity, activityIds: a.activityIds });
   const siteUrl = process.env.SITE_URL || process.env.URL || "";
 
   let delivered = 0;
@@ -56,7 +81,7 @@ export default async () => {
     const chunk = batches.slice(i, i + 100);
     const payload = chunk.map((u) => {
       const unsub = `${siteUrl}/api/unsubscribe?u=${u.userId}&t=${unsubscribeToken(u.userId, secret)}`;
-      const { subject, html, text } = buildDigest({ changes: u.changes, searches: u.searches, siteUrl, unsubscribeUrl: unsub });
+      const { subject, html, text } = buildDigest({ changes: u.changes, searches: u.searches, activity: u.activity || [], siteUrl, unsubscribeUrl: unsub });
       return { from: FROM, to: [u.email], subject, html, text, headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } };
     });
     const res = await fetch("https://api.resend.com/emails/batch", {
@@ -65,7 +90,10 @@ export default async () => {
       body: JSON.stringify(payload),
     });
     if (!res.ok) { console.error(`[novidades] Resend ${res.status}: ${await res.text()}`); continue; }
-    await db.insert("digest_sent", chunk.flatMap((u) => u.ids.map((id) => ({ user_id: u.userId, change_id: id }))), "user_id,change_id");
+    const dsent = chunk.flatMap((u) => u.ids.map((id) => ({ user_id: u.userId, change_id: id })));
+    if (dsent.length) await db.insert("digest_sent", dsent, "user_id,change_id");
+    const asent = chunk.flatMap((u) => (u.activityIds || []).map((id) => ({ user_id: u.userId, activity_id: id })));
+    if (asent.length) await db.insert("activity_sent", asent, "user_id,activity_id");
     delivered += chunk.length;
   }
   console.log(`[novidades] ${today}: ${delivered} e-mail(s) de novidades enviados`);

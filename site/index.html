@@ -37,7 +37,7 @@
   </div>
     <ul class="how">
       <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></span><div><b>Busque</b> <span>onde inscrever seu filme: por nome, gênero, país, duração e o que mais importar para o seu filme.</span></div></li>
-      <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></span><div><b>Organize</b> <span>os festivais por projeto, com checklist de materiais, notas e a situação de cada inscrição.</span></div></li>
+      <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></span><div><b>Organize</b> <span>os festivais por projeto, com checklist de materiais, notas e a situação de cada inscrição. Convide a equipe do filme para planejar junto.</span></div></li>
       <li><span class="ico" aria-hidden="true"></span><div><b>Calcule</b> <span>quanto vai investir em inscrições: o site soma as taxas dos seus festivais e converte para reais.</span></div></li>
       <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></span><div><b>Receba avisos</b> <span>por e-mail antes dos prazos e quando entrar um festival que combine com a sua busca.</span></div></li>
       <li><span class="ico" aria-hidden="true"></span><div><b>Exporte</b> <span>os prazos para a sua agenda. Baixe a planilha de custos e o relatório de circulação de cada filme.</span></div></li>
@@ -282,6 +282,49 @@
       <button type="button" class="btn ghost" onclick="this.closest('dialog').close()">Cancelar</button>
       <button class="btn">Salvar</button>
     </div>
+  </form>
+</dialog>
+
+<dialog id="team" aria-labelledby="tm-title">
+  <form method="dialog" class="dlg">
+    <span class="kicker">Equipe do projeto</span>
+    <h2 id="tm-title"></h2>
+    <p class="muted small" id="tm-help"></p>
+    <div id="tm-invite" class="tm-invite">
+      <label class="fld">E-mail de quem vai participar<input type="email" id="tm-email" placeholder="nome@email.com" autocomplete="off" maxlength="254"></label>
+      <div class="seg" role="radiogroup" aria-label="Perfil">
+        <label><input type="radio" name="tm-role" value="editor" checked>Editor</label>
+        <label><input type="radio" name="tm-role" value="leitor">Apenas visualização</label>
+      </div>
+      <p class="seg-help" id="tm-role-help">Editor inclui e tira festivais, muda a situação e marca o checklist.</p>
+      <button type="button" class="btn" id="tm-send">Enviar convite</button>
+    </div>
+    <p class="muted small" id="tm-status" aria-live="polite"></p>
+    <div class="mem" id="tm-list"></div>
+    <fieldset id="tm-prefs" class="tm-prefs" hidden>
+      <legend>Seus avisos deste projeto</legend>
+      <label class="check" id="tm-remind-row"><input type="checkbox" id="tm-remind"><span>Lembretes de prazo dos festivais do projeto</span></label>
+      <label class="check" id="tm-changes-row"><input type="checkbox" id="tm-changes"><span>Mudanças nos festivais do projeto (data confirmada, prazo alterado)</span></label>
+      <label class="check"><input type="checkbox" id="tm-activity"><span>Resumo semanal da atividade da equipe (festival incluído ou retirado, situação alterada)</span></label>
+    </fieldset>
+    <div class="dlg-actions"><button type="button" class="link-btn" id="tm-leave" hidden>Sair deste projeto</button><button value="close" class="btn ghost">Fechar</button></div>
+  </form>
+</dialog>
+
+<dialog id="invite" aria-labelledby="iv-title">
+  <form method="dialog" class="dlg">
+    <span class="kicker">Convite para a equipe</span>
+    <h2 id="iv-title"></h2>
+    <p id="iv-text"></p>
+    <fieldset id="iv-prefs" class="tm-prefs">
+      <legend>Que e-mails você quer receber deste projeto?</legend>
+      <label class="check"><input type="checkbox" id="iv-remind" checked><span>Lembretes de prazo dos festivais do projeto</span></label>
+      <label class="check"><input type="checkbox" id="iv-changes" checked><span>Mudanças nos festivais do projeto (data confirmada, prazo alterado)</span></label>
+      <label class="check"><input type="checkbox" id="iv-activity"><span>Resumo semanal da atividade da equipe</span></label>
+      <p class="muted small">Dá para mudar depois, em Ver equipe, dentro do projeto.</p>
+    </fieldset>
+    <p class="iv-err" id="iv-err" hidden></p>
+    <div class="dlg-actions"><button type="button" class="link-btn" id="iv-decline">Recusar</button><button type="button" class="btn" id="iv-accept">Aceitar e abrir o projeto</button></div>
   </form>
 </dialog>
 
