@@ -226,6 +226,10 @@ export function createClient() {
   assert.ok(!(await f.$("#dt-track")), "apenas visualização não muda a situação");
   assert.ok(await f.$("#nt-add"), "apenas visualização escreve notas próprias");
   await f.screenshot({ path: `${out}/equipe-7-leitor.png` });
+  await f.click("#dt-close");
+  await f.click('#tb tr:has-text("Curta Cinema") .star');
+  await f.waitForFunction(() => /apenas visualização/.test(document.querySelector("#toast").textContent));
+  await f.screenshot({ path: `${out}/equipe-8-estrela-leitor.png` });
   await f.context().close();
 
   console.log("erros JS:", errors);
