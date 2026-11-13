@@ -49,12 +49,14 @@ create table if not exists public.film_activity (
   id          bigint generated always as identity primary key,
   film_id     uuid not null references public.films (id) on delete cascade,
   actor       uuid references public.profiles (id) on delete set null,
-  kind        text not null check (kind in ('incluiu', 'tirou', 'situacao')),
+  kind        text not null,
   festival_id text not null,
   detail      text,
   at          timestamptz not null default now()
 );
 create index if not exists film_activity_film on public.film_activity (film_id, at);
+alter table public.film_activity drop constraint if exists film_activity_kind_check;
+alter table public.film_activity add constraint film_activity_kind_check check (kind in ('incluiu', 'tirou', 'situacao', 'nota'));
 create table if not exists public.activity_sent (
   user_id     uuid not null references public.profiles (id) on delete cascade,
   activity_id bigint not null references public.film_activity (id) on delete cascade,
@@ -235,6 +237,23 @@ $$;
 drop trigger if exists saved_festivals_activity on public.saved_festivals;
 create trigger saved_festivals_activity after insert or delete or update of status on public.saved_festivals
   for each row execute function public.log_activity();
+
+-- Nota compartilhada (nova ou que passou de privada para compartilhada) entra no resumo da equipe
+create or replace function public.log_note()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if new.shared and (tg_op = 'INSERT' or not old.shared) then
+    insert into public.film_activity (film_id, actor, kind, festival_id, detail)
+    values (new.film_id, new.user_id, 'nota', new.festival_id, left(new.body, 160));
+  end if;
+  return null;
+exception when others then
+  return null;
+end;
+$$;
+drop trigger if exists festival_notes_activity on public.festival_notes;
+create trigger festival_notes_activity after insert or update of shared on public.festival_notes
+  for each row execute function public.log_note();
 
 -- ——— Funções chamadas pelo site ———
 -- Equipe de um projeto (só para quem participa): dona, membros e convites pendentes

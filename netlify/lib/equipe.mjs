@@ -40,8 +40,9 @@ export function selectActivity({ activity, members, festivals, names, films, sen
       u.activity.push({
         film: films.get(a.film_id) || "seu projeto",
         who: names.get(a.actor) || "Alguém da equipe",
-        what: a.kind === "incluiu" ? "incluiu" : a.kind === "tirou" ? "tirou" : `marcou como ${STATUS_LABEL[a.detail] || a.detail}`,
+        what: a.kind === "incluiu" ? "incluiu" : a.kind === "tirou" ? "tirou" : a.kind === "nota" ? "compartilhou uma nota em" : `marcou como ${STATUS_LABEL[a.detail] || a.detail}`,
         festival: f ? f.name : a.festival_id,
+        quote: a.kind === "nota" ? a.detail || "" : "",
       });
       u.activityIds.push(a.id);
     }
@@ -95,9 +96,9 @@ export function activityHTML(items, { INK, MUTED, SANS }) {
     byFilm.get(it.film).push(it);
   }
   return [...byFilm.entries()]
-    .map(([film, list]) => `<tr><td style="padding:22px 0 6px;font-family:${SANS};font-size:14px;color:${INK}">Na equipe de <b>${esc(film)}</b>:</td></tr>` +
-      list.map((it) => `<tr><td style="padding:6px 0;border-bottom:1px dotted #a9a9a4;font-family:${SANS};font-size:14px;color:${INK}">${esc(it.who)} ${esc(it.what)} <b>${esc(it.festival)}</b></td></tr>`).join(""))
+    .map(([film, list]) => `<tr><td style="padding:22px 0 6px;font-family:${SANS};font-size:14px;color:${INK}">Na equipe de <b>${esc(film)}</b></td></tr>` +
+      list.map((it) => `<tr><td style="padding:6px 0;border-bottom:1px dotted #a9a9a4;font-family:${SANS};font-size:14px;color:${INK}">${esc(it.who)} ${esc(it.what)} <b>${esc(it.festival)}</b>${it.quote ? `<div style="margin-top:4px;padding-left:10px;border-left:3px solid #c6ff3d;color:${MUTED};font-style:italic">“${esc(it.quote)}${it.quote.length >= 160 ? "…" : ""}”</div>` : ""}</td></tr>`).join(""))
     .join("") + `<tr><td style="padding:8px 0 0;font-family:${SANS};font-size:12px;color:${MUTED}"></td></tr>`;
 }
-export const activityText = (items) => items.map((it) => `${it.film}: ${it.who} ${it.what} ${it.festival}`).join("\n");
+export const activityText = (items) => items.map((it) => `${it.film}. ${it.who} ${it.what} ${it.festival}${it.quote ? `\n  “${it.quote}”` : ""}`).join("\n");
 export { fmtDate };

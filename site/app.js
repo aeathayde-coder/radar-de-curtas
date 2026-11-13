@@ -527,6 +527,7 @@ async function loadTeamData() {
       if (m.role !== "dono") S.teamSize.set(m.film_id, (S.teamSize.get(m.film_id) || 0) + 1);
     }
     S.notes = notes.data || []; S.invites = inv.data || []; S.v5 = true;
+    const m = seenMap(); if (!m._base) { m._base = new Date().toISOString(); saveSeen(m); }
   } catch (e) { console.warn("equipe indisponível", e); }
 }
 async function loadTeam(fid) {
@@ -844,7 +845,8 @@ function inscBadge(f) {
   const r = rowOf(f.id); if (!r) return "";
   if (inGeneral()) return hasNotes(r) ? `<span class="insc-badge">com notas</span>` : "";
   const list = checklistOf(r); const done = list.filter((x) => x.d).length;
-  return `<span class="insc-badge">checklist ${done}/${list.length}${hasNotes(r) ? " · com notas" : ""}${r.award ? " · prêmio" : ""}</span>`;
+  const nn = S.v5 ? newNotesCount(f.id) : 0;
+  return `<span class="insc-badge">checklist ${done}/${list.length}${hasNotes(r) ? " · com notas" : ""}${r.award ? " · prêmio" : ""}</span>${nn ? `<span class="insc-badge note-new">${nn === 1 ? "nota nova" : `${nn} notas novas`}</span>` : ""}`;
 }
 function fitHTML(f) {
   if (!S.v4) return "";
@@ -954,7 +956,19 @@ async function moveRow(fid, to) {
 const ICO_LOCK = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
 const ICO_TEAM = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.8 0 4.9 2 5.5 5"/></svg>`;
 const ICO_INVITE = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M19 8v6M16 11h6"/></svg>`;
-let NOTE_COLS = "id,film_id,festival_id,user_id,body,shared,created_at,author_name";
+let NOTE_COLS = "id,film_id,festival_id,user_id,body,shared,created_at,updated_at,author_name";
+// Notas novas da equipe: marca o que chegou desde a última vez que a pessoa abriu a ficha (guardado neste navegador)
+const seenKey = () => `rdf-notas-vistas:${S.user?.id}`;
+function seenMap() { try { return JSON.parse(localStorage.getItem(seenKey()) || "{}"); } catch { return {}; } }
+function saveSeen(m) { try { localStorage.setItem(seenKey(), JSON.stringify(m)); } catch {} }
+function isNewNote(n) {
+  if (!S.v5 || !S.user || n.user_id === S.user.id || !n.shared) return false;
+  const m = seenMap();
+  const seen = m[`${n.film_id}|${n.festival_id}`] || m._base;
+  return !!seen && Date.parse(n.updated_at || n.created_at) > Date.parse(seen);
+}
+const newNotesCount = (fid, film = S.film) => notesFor(fid, film).filter(isNewNote).length;
+function markSeen(film, fid) { const m = seenMap(); m[`${film}|${fid}`] = new Date().toISOString(); saveSeen(m); }
 function notesHTML(f) {
   const gen = inGeneral();
   const items = notesFor(f.id).map((n) => {
@@ -969,8 +983,9 @@ function notesHTML(f) {
     const tools = mine
       ? `<button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="edit">editar</button><button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="del">apagar</button>`
       : gone && roleOf(S.film) === "dono" ? `<button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="del">apagar</button>` : "";
+    const fresh = S.freshNotes?.has(n.id);
     const hint = mine && !n.shared && n.id === S.newNote ? `<p class="nt-hint">Esta nota está privada. Para a equipe ver, toque em <b>Privada</b> ao lado. →</p>` : "";
-    return `<li class="nt${hint ? " is-new" : ""}" data-id="${esc(n.id)}">${gen ? "" : n.shared ? ICO_TEAM : ICO_LOCK}<div class="nt-body"><p>${esc(n.body)}</p>${who ? `<small>${who}</small>` : ""}${hint}</div><div class="nt-acts">${pill}${tools}</div></li>`;
+    return `<li class="nt${hint ? " is-new" : ""}${fresh ? " fresh" : ""}" data-id="${esc(n.id)}">${gen ? "" : n.shared ? ICO_TEAM : ICO_LOCK}<div class="nt-body">${fresh ? `<span class="nt-tag">nota nova</span>` : ""}<p>${esc(n.body)}</p>${who ? `<small>${who}</small>` : ""}${hint}</div><div class="nt-acts">${pill}${tools}</div></li>`;
   }).join("");
   return `<span class="kicker">${gen ? "Notas (só você vê)" : "Notas"}</span>
     ${items ? `<ul class="nt-list" id="nt-list">${items}</ul>` : `<ul class="nt-list" id="nt-list"></ul>`}
@@ -1387,7 +1402,12 @@ function refreshDetail(id) { if ($("#detail").open && detailId === id) openDetai
 function openDetail(id) {
   const f = S.all.find((x) => x.id === id);
   if (!f) return;
+  const reopen = detailId === id && $("#detail").open;
   detailId = id;
+  if (!reopen && S.v5 && S.film) {
+    S.freshNotes = new Set(notesFor(id).filter(isNewNote).map((n) => n.id));
+    if (S.freshNotes.size) { markSeen(S.film, id); setTimeout(renderTable, 0); }
+  }
   const st = f._st;
   const rows = [];
   const add = (k, v) => v && rows.push(`<dt>${k}</dt><dd>${v}</dd>`);

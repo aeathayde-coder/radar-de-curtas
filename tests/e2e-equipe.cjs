@@ -190,6 +190,24 @@ export function createClient() {
   await f.screenshot({ path: `${out}/equipe-6-ver-equipe.png` });
   await f.context().close();
 
+  // 3b) Ana compartilha uma nota nova depois da última visita do Felipe: selo "nota nova" na lista e na ficha
+  db.festival_notes.push({ id: "nn1", film_id: "f1", festival_id: "curta-cinema", user_id: "u-ana", author_name: "Ana Elisa", body: "A curadoria confirmou: pode mandar a cópia de trabalho na inscrição.", shared: true, created_at: new Date(Date.now() - 60000).toISOString(), updated_at: new Date(Date.now() - 60000).toISOString() });
+  f = await open(USERS.felipe);
+  await f.evaluate(() => localStorage.setItem("rdf-notas-vistas:u-felipe", JSON.stringify({ _base: new Date(Date.now() - 3600000).toISOString() })));
+  await f.reload();
+  await f.waitForSelector("#open-profile");
+  await f.click("#nav-saved");
+  await f.waitForSelector(".insc-badge.note-new");
+  await (await f.$('#tb tr:has-text("Curta Cinema")')).scrollIntoViewIfNeeded();
+  await f.screenshot({ path: `${out}/equipe-nota-nova-lista.png` });
+  await f.click('#tb tr:has-text("Curta Cinema") td.name');
+  await f.waitForSelector(".nt.fresh");
+  await (await f.$(".nt.fresh")).scrollIntoViewIfNeeded();
+  await f.screenshot({ path: `${out}/equipe-nota-nova-ficha.png` });
+  await f.click("#dt-close");
+  await f.waitForFunction(() => !document.querySelector(".insc-badge.note-new"));
+  await f.context().close();
+
   // 4) Ana muda o Felipe para apenas visualização; ele perde a edição
   a = await open(USERS.ana);
   await a.waitForSelector("#open-profile");

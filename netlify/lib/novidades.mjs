@@ -118,7 +118,7 @@ export function buildDigest({ changes, searches, activity = [], siteUrl, unsubsc
   const intro = [
     changes.length ? (changes.length === 1 ? "Um festival da sua lista teve novidade esta semana." : `${changes.length} festivais da sua lista tiveram novidades esta semana.`) : "",
     nNew ? (nNew === 1 ? "Entrou no Radar um festival que combina com uma busca que você salvou." : `Entraram no Radar ${nNew} festivais que combinam com buscas que você salvou.`) : "",
-    activity.length ? "Veja também o que a equipe fez nos seus projetos." : "",
+    activity.length ? (changes.length || nNew ? "Veja também o que a equipe fez nos seus projetos." : "Veja o que a equipe fez nos seus projetos nesta semana.") : "",
   ].filter(Boolean).join(" ");
   const actRows = activity.length ? activityHTML(activity, { INK, MUTED, SANS }) : "";
 

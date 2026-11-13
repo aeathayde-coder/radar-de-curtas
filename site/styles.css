@@ -663,3 +663,6 @@ dialog .toast{position:fixed;z-index:5}
 .check[hidden]{display:none}
 .nt.is-new .vis{box-shadow:0 0 0 3px var(--neon)}
 .nt-hint{margin:8px 0 0;font-size:13px;line-height:1.4;background:var(--neon-soft);border:1px dotted var(--fg);border-radius:4px;padding:6px 10px}
+.insc-badge.note-new{display:table;width:auto;margin-bottom:6px;background:var(--neon);color:var(--on-neon);border:1px solid var(--fg);padding:1px 6px;margin-top:4px}
+.nt.fresh .nt-body p{font-weight:500}
+.nt-tag{display:inline-block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;background:var(--neon);color:var(--on-neon);border:1px solid var(--fg);border-radius:3px;padding:1px 6px;margin-bottom:4px}
