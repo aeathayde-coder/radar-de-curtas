@@ -527,7 +527,8 @@ async function loadTeamData() {
       if (m.role !== "dono") S.teamSize.set(m.film_id, (S.teamSize.get(m.film_id) || 0) + 1);
     }
     S.notes = notes.data || []; S.invites = inv.data || []; S.v5 = true;
-    const m = seenMap(); if (!m._base) { m._base = new Date().toISOString(); saveSeen(m); }
+    // Primeira visita neste navegador: notas da equipe dos últimos 7 dias contam como novas
+    const m = seenMap(); if (!m._base) { m._base = new Date(Date.now() - 7 * 86400000).toISOString(); saveSeen(m); }
   } catch (e) { console.warn("equipe indisponível", e); }
 }
 async function loadTeam(fid) {
