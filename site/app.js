@@ -353,7 +353,7 @@ async function downloadXlsx() {
 function saveFee(row) {
   const id = row.dataset.id;
   const v = parseFloat(row.querySelector("input").value);
-  const c = row.querySelector("select").value;
+  const c = row.querySelector(".cr-fee select").value;
   try {
     if (Number.isFinite(v) && v >= 0) localStorage.setItem("rdf-fee-" + id, JSON.stringify({ v, c }));
     else localStorage.removeItem("rdf-fee-" + id);
