@@ -1569,6 +1569,19 @@ function bind() {
   $("#iv-accept").onclick = inviteAction;
   $("#iv-decline").onclick = declineInvite;
   $("#team").addEventListener("click", (e) => { if (e.target === $("#team")) $("#team").close(); });
+  // Projeto compartilhado: ao voltar para a aba, busca o que a equipe mudou (notas, situação, festivais)
+  let lastSync = Date.now();
+  const resync = async () => {
+    if (document.visibilityState !== "visible" || !S.user || !S.v5 || Date.now() - lastSync < 15000) return;
+    if (!S.films.some((x) => isShared(x.id))) return;
+    if (document.activeElement?.matches?.("textarea, input")) return;
+    lastSync = Date.now();
+    await loadUserData();
+    renderAccount(); update();
+    if ($("#detail").open && detailId) openDetail(detailId);
+  };
+  document.addEventListener("visibilitychange", resync);
+  window.addEventListener("focus", resync);
   $("#si-new").onclick = () => { $("#si-new").hidden = true; $("#si-newbox").hidden = false; $("#si-name").focus(); };
   $("#si-create").onclick = createProjectAndSave;
   $("#si-name").onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); createProjectAndSave(); } };
