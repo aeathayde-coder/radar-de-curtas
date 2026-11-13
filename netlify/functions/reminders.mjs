@@ -3,6 +3,7 @@
 import { fetchFestivals, todayBRT } from "../lib/festivals.mjs";
 import { selectReminders, buildEmail, unsubscribeToken } from "../lib/reminders.mjs";
 import { admin } from "../lib/supabase-admin.mjs";
+import { memberRows } from "../lib/equipe.mjs";
 
 const FROM = process.env.RESEND_FROM || "Radar de Festivais <onboarding@resend.dev>";
 
@@ -19,6 +20,17 @@ export default async () => {
       "/saved_festivals?select=user_id,festival_id,status,profiles!inner(email,reminder_days,email_opt_in)&profiles.email_opt_in=eq.true",
     ),
   ]);
+
+  // Quem participa de projetos alheios também recebe os lembretes desses projetos (se pediu)
+  try {
+    const [members, filmSaved] = await Promise.all([
+      db.selectAll("/film_members?select=film_id,user_id,role,remind,profiles!inner(email,reminder_days,email_opt_in)&remind=eq.true&role=neq.dono&profiles.email_opt_in=eq.true"),
+      db.selectAll("/saved_festivals?select=film_id,festival_id,status"),
+    ]);
+    saved.push(...memberRows({ saved: filmSaved, members, flag: "remind" }));
+  } catch (e) {
+    console.log("[reminders] migração 5 ainda não rodada; só lembretes próprios");
+  }
 
   const since = new Date(Date.now() - 3 * 86400000).toISOString();
   const sentRows = await db.selectAll(`/reminders_sent?select=user_id,festival_id,deadline,days_before&sent_at=gte.${since}`);

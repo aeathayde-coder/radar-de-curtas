@@ -28,6 +28,14 @@ export function admin() {
         headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
         body: JSON.stringify(rows),
       }),
+    upsert: (table, rows, onConflict) =>
+      req(`/${table}?on_conflict=${onConflict}`, {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify(rows),
+      }),
+    insertReturning: (table, rows) =>
+      req(`/${table}`, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify(rows) }),
     patch: (pathWithFilter, body) =>
       req(pathWithFilter, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(body) }),
   };

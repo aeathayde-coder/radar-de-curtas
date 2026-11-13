@@ -18,6 +18,8 @@ export function selectReminders({ saved, festivals, today, sent = new Set() }) {
     const key = `${row.user_id}|${f.id}|${f.deadline}|${days}`;
     if (sent.has(key)) continue;
     if (!byUser.has(row.user_id)) byUser.set(row.user_id, { userId: row.user_id, email: prof.email, items: [] });
+    // Com vários filmes, o mesmo festival pode estar salvo mais de uma vez: um aviso só
+    if (byUser.get(row.user_id).items.some((it) => it.festival.id === f.id)) continue;
     byUser.get(row.user_id).items.push({ festival: f, days });
   }
   for (const u of byUser.values()) u.items.sort((a, b) => a.days - b.days);
