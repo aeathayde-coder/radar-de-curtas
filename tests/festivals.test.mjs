@@ -76,6 +76,11 @@ test("datas no fuso de Brasília", () => {
 
 test("lembretes: dias certos, opt-out e deduplicação", () => {
   const prof = { email: "a@x.com", reminder_days: [30, 7, 1], email_opt_in: true };
+  // Datas fixas, para o teste não depender dos prazos reais da base.
+  const list = [
+    { id: "tampere", name: "Tampere", deadline: "2026-11-03", dateStatus: "Confirmada" },
+    { id: "go-short", name: "Go Short", deadline: "2026-12-20", dateStatus: "Confirmada" },
+  ];
   const saved = [
     { user_id: "u1", festival_id: "tampere", profiles: prof },
     { user_id: "u1", festival_id: "go-short", profiles: prof },
