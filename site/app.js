@@ -305,7 +305,7 @@ function renderCalc() {
     const opts = [...new Set([fee.c, ...CURRENCIES])].map((c) => `<option ${c === fee.c ? "selected" : ""}>${c}</option>`).join("");
     return `<div class="calc-row" data-id="${esc(f.id)}">
       <span class="cr-name">${esc(f.name)}<small>${f.fee ? esc(f.fee) : "taxa não informada"}</small></span>
-      ${S.trackSupported ? `<select class="cr-st" aria-label="Situação de ${esc(f.name)}">${TRACK.map(([v, l]) => `<option value="${v}" ${v === st ? "selected" : ""}>${l}</option>`).join("")}</select>` : ""}
+      ${S.trackSupported ? `<select class="cr-st" aria-label="Situação de ${esc(f.name)}"${canEdit() ? "" : " disabled"}>${TRACK.map(([v, l]) => `<option value="${v}" ${v === st ? "selected" : ""}>${l}</option>`).join("")}</select>` : ""}
       <span class="cr-fee"><input type="number" min="0" step="0.01" inputmode="decimal" value="${fee.v ?? ""}" placeholder="taxa" aria-label="Taxa de ${esc(f.name)}"><select aria-label="Moeda">${opts}</select></span>
       <span class="cr-brl">${v != null ? brl.format(v) : fee.v == null ? "informe a taxa" : "sem cotação"}</span>
     </div>`;
