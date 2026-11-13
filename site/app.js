@@ -986,6 +986,7 @@ function bindNotes(f) {
     const { data, error } = await S.sb.from("festival_notes").insert({ film_id: S.film, festival_id: f.id, user_id: S.user.id, body }).select(NOTE_COLS).single();
     if (error) { console.error(error); return toast("Não foi possível salvar a nota."); }
     S.notes.push(data); refreshDetail(f.id); renderTable();
+    if (isShared(S.film)) toast("Nota salva como privada. Toque em Privada para a equipe ver.");
   };
   $("#nt-list").onclick = async (e) => {
     const b = e.target.closest("[data-act]");
