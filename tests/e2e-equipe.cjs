@@ -176,6 +176,11 @@ export function createClient() {
   assert.match(notes, /legenda/);
   assert.doesNotMatch(notes, /Senha/);
   assert.ok(await f.$("#dt-track"), "editor muda a situação");
+  await f.fill("#nt-new", "Falar com a distribuidora antes de inscrever");
+  await f.click("#nt-add button");
+  await f.waitForSelector(".nt-hint");
+  await (await f.$("#nt-list")).scrollIntoViewIfNeeded();
+  await f.screenshot({ path: `${out}/equipe-nota-nova.png` });
   await f.screenshot({ path: `${out}/equipe-5-felipe.png` });
   await f.click("#dt-close");
   await f.click("#film-team");

@@ -969,7 +969,8 @@ function notesHTML(f) {
     const tools = mine
       ? `<button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="edit">editar</button><button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="del">apagar</button>`
       : gone && roleOf(S.film) === "dono" ? `<button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="del">apagar</button>` : "";
-    return `<li class="nt" data-id="${esc(n.id)}">${gen ? "" : n.shared ? ICO_TEAM : ICO_LOCK}<div class="nt-body"><p>${esc(n.body)}</p>${who ? `<small>${who}</small>` : ""}</div><div class="nt-acts">${pill}${tools}</div></li>`;
+    const hint = mine && !n.shared && n.id === S.newNote ? `<p class="nt-hint">Esta nota está privada. Para a equipe ver, toque em <b>Privada</b> ao lado. →</p>` : "";
+    return `<li class="nt${hint ? " is-new" : ""}" data-id="${esc(n.id)}">${gen ? "" : n.shared ? ICO_TEAM : ICO_LOCK}<div class="nt-body"><p>${esc(n.body)}</p>${who ? `<small>${who}</small>` : ""}${hint}</div><div class="nt-acts">${pill}${tools}</div></li>`;
   }).join("");
   return `<span class="kicker">${gen ? "Notas (só você vê)" : "Notas"}</span>
     ${items ? `<ul class="nt-list" id="nt-list">${items}</ul>` : `<ul class="nt-list" id="nt-list"></ul>`}
@@ -985,8 +986,9 @@ function bindNotes(f) {
     if (!body) return;
     const { data, error } = await S.sb.from("festival_notes").insert({ film_id: S.film, festival_id: f.id, user_id: S.user.id, body }).select(NOTE_COLS).single();
     if (error) { console.error(error); return toast("Não foi possível salvar a nota."); }
-    S.notes.push(data); refreshDetail(f.id); renderTable();
-    if (isShared(S.film)) toast("Nota salva como privada. Toque em Privada para a equipe ver.");
+    S.notes.push(data);
+    S.newNote = isShared(S.film) ? data.id : null;
+    refreshDetail(f.id); renderTable();
   };
   $("#nt-list").onclick = async (e) => {
     const b = e.target.closest("[data-act]");
@@ -998,7 +1000,7 @@ function bindNotes(f) {
       const shared = !n.shared;
       const { error } = await S.sb.from("festival_notes").update({ shared }).eq("id", n.id);
       if (error) { console.error(error); return toast("Não foi possível alterar a nota."); }
-      n.shared = shared; refreshDetail(f.id);
+      n.shared = shared; S.newNote = null; refreshDetail(f.id);
       return toast(shared ? "Nota compartilhada com a equipe." : "Nota agora é privada.");
     }
     if (act === "del") {

@@ -661,3 +661,5 @@ dialog .toast{position:fixed;z-index:5}
 @media (max-width:520px){.nt{grid-template-columns:auto minmax(0,1fr)}.nt-acts{grid-column:2;justify-content:flex-start}.nt-add{flex-direction:column;align-items:stretch}}
 .tm-prefs[hidden],.inv-bar[hidden],#tm-invite[hidden]{display:none}
 .check[hidden]{display:none}
+.nt.is-new .vis{box-shadow:0 0 0 3px var(--neon)}
+.nt-hint{margin:8px 0 0;font-size:13px;line-height:1.4;background:var(--neon-soft);border:1px dotted var(--fg);border-radius:4px;padding:6px 10px}
