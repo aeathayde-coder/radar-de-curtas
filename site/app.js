@@ -986,7 +986,7 @@ function notesHTML(f) {
       : gone && roleOf(S.film) === "dono" ? `<button type="button" class="link-btn" data-note="${esc(n.id)}" data-act="del">apagar</button>` : "";
     const fresh = S.freshNotes?.has(n.id);
     const hint = mine && !n.shared && n.id === S.newNote ? `<p class="nt-hint">Esta nota está privada. Para a equipe ver, toque em <b>Privada</b> ao lado. →</p>` : "";
-    return `<li class="nt${hint ? " is-new" : ""}${fresh ? " fresh" : ""}" data-id="${esc(n.id)}">${gen ? "" : n.shared ? ICO_TEAM : ICO_LOCK}<div class="nt-body">${fresh ? `<span class="nt-tag">nota nova</span>` : ""}<p>${esc(n.body)}</p>${who ? `<small>${who}</small>` : ""}${hint}</div><div class="nt-acts">${pill}${tools}</div></li>`;
+    return `<li class="nt${hint ? " is-new" : ""}${fresh ? " fresh" : ""}" data-id="${esc(n.id)}">${gen ? "" : n.shared ? ICO_TEAM : ICO_LOCK}<div class="nt-body">${fresh ? `<span class="nt-tag">nova</span>` : ""}<p>${esc(n.body)}</p>${who ? `<small>${who}</small>` : ""}${hint}</div><div class="nt-acts">${pill}${tools}</div></li>`;
   }).join("");
   return `<span class="kicker">${gen ? "Notas (só você vê)" : "Notas"}</span>
     ${items ? `<ul class="nt-list" id="nt-list">${items}</ul>` : `<ul class="nt-list" id="nt-list"></ul>`}
