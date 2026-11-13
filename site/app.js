@@ -617,6 +617,8 @@ function saveClick(id) {
   if (!S.user) return login();
   if (S.v4) {
     const inFilms = S.rows.filter((r) => r.festival_id === id);
+    // Em Meus salvos, a estrela tira o festival da lista que está aberta
+    if (S.s === "mine" && S.film && inFilms.some((r) => r.film_id === S.film)) return saveInFilm(id, S.film, false);
     if (S.films.length <= 1 && inFilms.length === 1) return saveInFilm(id, inFilms[0].film_id, false);
     return openSaveIn(id);
   }
